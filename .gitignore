@@ -1,0 +1,16 @@
+# Build output
+.build/
+build/
+*.dmg
+*.dmg.sha256
+
+# Tuist generates these from Project.swift
+*.xcodeproj/
+*.xcworkspace/
+Derived/
+
+# Local tooling and editor state
+.claude/
+xcuserdata/
+.DS_Store
+.swiftpm/

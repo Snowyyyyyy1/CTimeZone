@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Pull requests from forks run here too, so this workflow gets no secrets
+# and only read access. Never point it at a self-hosted runner.
+permissions:
+  contents: read
+
+env:
+  TUIST_SKIP_UPDATE_CHECK: 1
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Generate project
+        run: tuist generate --no-open
+      - name: Test
+        run: >
+          xcodebuild test -workspace CTimezone.xcworkspace -scheme CTimezoneKit
+          -destination 'platform=macOS' -derivedDataPath .build CODE_SIGNING_ALLOWED=NO
+      - name: Build app
+        run: >
+          xcodebuild build -workspace CTimezone.xcworkspace -scheme CTimezone
+          -configuration Release -destination 'generic/platform=macOS'
+          -derivedDataPath .build CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=

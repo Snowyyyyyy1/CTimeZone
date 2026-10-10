@@ -1,0 +1,171 @@
+name: Release
+
+# Push a tag like v0.2.0. The workflow builds a universal app, packages a DMG,
+# publishes a GitHub release, then updates the Sparkle appcast on gh-pages.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  TUIST_SKIP_UPDATE_CHECK: 1
+  APP: .build/Build/Products/Release/CTimeZone.app
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Sparkle compares CFBundleVersion, so derive a number that always grows
+      # with the semantic version instead of relying on run counters.
+      - name: Version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ ! "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Tag must look like vX.Y.Z (got $GITHUB_REF_NAME)"; exit 1
+          fi
+          MAJOR=${BASH_REMATCH[1]} MINOR=${BASH_REMATCH[2]} PATCH=${BASH_REMATCH[3]}
+          if (( MINOR > 99 || PATCH > 99 )); then
+            echo "::error::Minor and patch must stay below 100"; exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))" >> "$GITHUB_OUTPUT"
+
+      # Without the private key generate_appcast only warns and writes an
+      # unsigned appcast, which every client rejects. Fail early instead.
+      - name: Check signing secret
+        env:
+          KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+        run: '[ -n "$KEY" ] || { echo "::error::SPARKLE_PRIVATE_ED_KEY is not set"; exit 1; }'
+
+      - uses: jdx/mise-action@v2
+
+      - name: Generate project
+        run: tuist generate --no-open
+
+      - name: Test
+        run: >
+          xcodebuild test -workspace CTimezone.xcworkspace -scheme CTimezoneKit
+          -destination 'platform=macOS' -derivedDataPath .build CODE_SIGNING_ALLOWED=NO
+
+      # Ad-hoc signed: there is no Developer ID. Sparkle trusts updates through
+      # the EdDSA signature, so this is enough for auto-update to work.
+      - name: Build
+        run: >
+          xcodebuild build -workspace CTimezone.xcworkspace -scheme CTimezone
+          -configuration Release -destination 'generic/platform=macOS'
+          -derivedDataPath .build
+          MARKETING_VERSION=${{ steps.version.outputs.version }}
+          CURRENT_PROJECT_VERSION=${{ steps.version.outputs.build }}
+          CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
+
+      # Each of these builds fine and only fails on a user's machine.
+      - name: Verify bundle
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: |
+          set -euo pipefail
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          PLIST="$APP/Contents/Info.plist"
+          [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "$VERSION" ]
+          [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "$BUILD" ]
+          [ -n "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$PLIST")" ]
+          [ -d "$APP/Contents/Frameworks/Sparkle.framework" ]
+          lipo -archs "$APP/Contents/MacOS/CTimeZone"
+
+      - name: Package
+        id: package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          NAME="CTimeZone-$VERSION.dmg"
+          scripts/make-dmg.sh "$APP" "$NAME"
+          shasum -a 256 "$NAME" | tee "$NAME.sha256"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Release notes
+        run: |
+          set -euo pipefail
+          PREV="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          {
+            echo "## Changes"
+            if [ -n "$PREV" ]; then
+              git log --no-merges --pretty='- %s' "$PREV..$GITHUB_REF_NAME"
+            else
+              echo "- First release"
+            fi
+          } > notes.md
+          cat notes.md
+
+      # The existing appcast is the seed: generate_appcast keeps old items and
+      # only adds the new DMG, so past installers never need re-downloading.
+      - name: Build appcast
+        env:
+          SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+          NAME: ${{ steps.package.outputs.name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/appcast"
+          mkdir -p "$WORK"
+          cp "$NAME" "$WORK/"
+          cp notes.md "$WORK/CTimeZone-$VERSION.md"
+          if git fetch --depth 1 origin gh-pages 2>/dev/null \
+             && git show origin/gh-pages:appcast.xml > "$WORK/appcast.xml" 2>/dev/null; then
+            echo "Seeded from the published appcast"
+          else
+            rm -f "$WORK/appcast.xml"
+            echo "No published appcast yet; first release"
+          fi
+          GEN="$(find .build/SourcePackages/artifacts -name generate_appcast -type f | head -1 || true)"
+          [ -n "$GEN" ] || { echo "::error::generate_appcast not found"; exit 1; }
+          echo "$SPARKLE_PRIVATE_ED_KEY" | "$GEN" --ed-key-file - --maximum-deltas 0 \
+            --embed-release-notes \
+            --download-url-prefix "https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/" \
+            "$WORK"
+          python3 scripts/fix-appcast.py "$WORK/appcast.xml" "$GITHUB_REPOSITORY"
+          grep -q 'sparkle:edSignature' "$WORK/appcast.xml" || { echo "::error::appcast is unsigned"; exit 1; }
+          cp "$WORK/appcast.xml" appcast.xml
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.package.outputs.name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$NAME" "$NAME.sha256" \
+            --title "CTimeZone $VERSION" --notes-file notes.md
+
+      # Must run after the release exists: the appcast points at its assets,
+      # and publishing first would hand every client a 404.
+      - name: Publish appcast
+        run: |
+          set -euo pipefail
+          # Move it out of the way: an untracked appcast.xml would block the switch.
+          mv appcast.xml "$RUNNER_TEMP/appcast.xml"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse --verify origin/gh-pages >/dev/null 2>&1; then
+            git switch -c gh-pages-publish origin/gh-pages
+          else
+            git switch --orphan gh-pages-publish
+          fi
+          git rm -rq --ignore-unmatch . || true
+          cp "$RUNNER_TEMP/appcast.xml" appcast.xml
+          touch .nojekyll
+          git add appcast.xml .nojekyll
+          git commit -m "Update appcast for $GITHUB_REF_NAME"
+          git push origin HEAD:gh-pages
