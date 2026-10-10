@@ -3,6 +3,33 @@
     <channel>
         <title>CTimeZone</title>
         <item>
+            <title>0.2.0</title>
+            <pubDate>Sat, 10 Oct 2026 13:35:42 +0000</pubDate>
+            <sparkle:version>200</sparkle:version>
+            <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown">### 新增
+
+- **Dock 启动器**：在 CTimeZone 的「Dock Launcher」一行点 **Add to Dock…**，会在 `~/Applications` 生成 `Claude · &lt;城市&gt;.app`。把它拖进 Dock，以后直接点它打开 Claude，不用再先开 CTimeZone。Spotlight 和 Raycast 也能搜到。
+- 启动器按当时的设置处理三种情况：
+  - Claude 没在运行：按目标时区启动；
+  - Claude 已经以目标时区运行：直接切到前台；
+  - Claude 以别的时区运行：先询问 **Relaunch**（正常退出后按目标时区重启）还是 **Just Open**（直接切到前台）。
+- 在 CTimeZone 里换时区后，启动器会自动改名（例如 `Claude · Tokyo`），Dock 里的图标继续可用。
+- 启动器图标在本机用你的 Claude 图标加一个 CTimeZone 小角标生成。
+
+### 改进
+
+- 默认窗口尺寸下能完整显示全部内容，包括新增的启动器一行。
+
+### 说明
+
+- 启动器随 CTimeZone 一起自动更新，不需要单独下载。
+- Claude 运行时，Dock 里会同时出现启动器和 Claude 本身两个图标，这是系统行为。建议把官方 Claude 图标移出 Dock，只留启动器。
+</description>
+            <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.2.0/CTimeZone-0.2.0.dmg" length="5420575" type="application/octet-stream" sparkle:edSignature="rHBSczaXsql+1CAeXHCsdBMAFzA6ObYF3FZa5essG1MUFnpsDv6wrhhDeusz4NM1VijpVvXyHVxLrR3j8LT0Aw==" />
+        </item>
+        <item>
             <title>0.1.0</title>
             <pubDate>Sat, 10 Oct 2026 10:56:08 +0000</pubDate>
             <sparkle:version>100</sparkle:version>
