@@ -1,8 +1,21 @@
-# CTimeZone
+<p align="center">
+  <img src="docs/icon.png" width="128" alt="CTimeZone app icon">
+</p>
 
-给 Claude 单独设置时区的原生 macOS 小工具，系统时区保持不变。
+<h1 align="center">CTimeZone</h1>
 
-*A small macOS app that gives Claude Code and Claude Desktop their own time zone without changing your Mac's.*
+<p align="center">
+  给 Claude 单独设置时区的原生 macOS 小工具，系统时区保持不变。<br>
+  <em>Give Claude Code and Claude Desktop their own time zone without changing your Mac's.</em>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Snowyyyyyy1/CTimeZone/releases/latest">下载最新版</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshot.png" width="800" alt="CTimeZone 主界面：左侧时区列表，右侧点阵世界地图标出 Mac 与 Claude 的位置，下方是两个时钟和 Claude Code、Claude Desktop 的设置">
+</p>
 
 > 非官方项目，与 Anthropic 无关。“Claude” 是 Anthropic 的商标，这里只用来说明本工具作用的对象。
 
