@@ -92,6 +92,36 @@ struct CTimezoneView: View {
                     .disabled(model.isBusy || model.desktopTargetIdentifier == nil)
                     .accessibilityIdentifier("ctz.launchButton")
                 }
+
+                if model.canInstallLauncher {
+                    targetRow(title: "Dock Launcher") {
+                        if let url = model.launcherURL {
+                            Text("\(url.deletingPathExtension().lastPathComponent) in ~/Applications")
+                        } else {
+                            Text("Open Claude in \(model.desktopModeLabel) from the Dock or Spotlight")
+                        }
+                    } actions: {
+                        if model.launcherURL != nil {
+                            Button {
+                                model.revealLauncher()
+                            } label: {
+                                Image(systemName: "folder")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Show in Finder")
+                            .accessibilityLabel("Show in Finder")
+                            Button("Remove") { model.removeLauncher() }
+                                .disabled(model.isBusy)
+                                .accessibilityIdentifier("ctz.removeLauncherButton")
+                        } else {
+                            Button("Add to Dock\u{2026}") {
+                                Task { await model.installLauncher() }
+                            }
+                            .disabled(model.isBusy)
+                            .accessibilityIdentifier("ctz.addLauncherButton")
+                        }
+                    }
+                }
             } footer: {
                 Text("Claude Code reads env.TZ from ~/.claude/settings.json; restart sessions to apply. Desktop only gets a launch environment, never what Claude detects on its servers.")
                     .font(.caption)

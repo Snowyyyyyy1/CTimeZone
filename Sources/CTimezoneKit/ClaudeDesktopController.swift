@@ -47,6 +47,14 @@ public final class ClaudeDesktopController {
         return Status(isRunning: true, observedTZ: ProcessTZProbe.read(pid: main.processIdentifier))
     }
 
+    /// Brings the running instance forward without touching its environment.
+    /// Returns false when Claude is not running.
+    @discardableResult
+    public func activateRunning() -> Bool {
+        guard let main = runningMains.first else { return false }
+        return main.activate(options: [])
+    }
+
     /// True when the running instance's observed `TZ` already matches `desired`.
     public func matches(desired: String) -> Bool {
         if case .value(let current) = status().observedTZ { return current == desired }

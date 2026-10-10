@@ -50,6 +50,24 @@ App 内置 [Sparkle](https://sparkle-project.org)，每天在后台检查一次�
 2. **Apply**：写入 `env.TZ`，同时把 Desktop 的启动时区设成同一个。**不会**重启 Claude Code，需要你自己重开会话。
 3. **Use System**：只删除 `env.TZ`（保留 `env` 里的其他键），Desktop 切回系统时区。
 4. **Open / Relaunch**：按目标时区启动 Claude Desktop。已有实例的时区不同时会先确认，再正常退出并重新启动；不用 `open -n`，也不强制退出。
+5. **Dock Launcher → Add to Dock…**：在 `~/Applications` 生成 `Claude · <城市>.app`，拖进 Dock 后日常直接点它打开 Claude，不用再开 CTimeZone。
+
+## Dock 启动器
+
+启动器没有窗口，点一下就按 CTimeZone 里当前的设置打开 Claude，然后自己退出：
+
+| Claude 的状态 | 启动器的行为 |
+|---|---|
+| 没在运行 | 带上 `TZ` 启动 |
+| 正在以目标时区运行 | 直接切到前台 |
+| 正在以别的时区运行 | 先问：**Relaunch**（正常退出后按目标时区重启）或 **Just Open**（直接切到前台） |
+
+- 每次点击时读取当前设置；在 CTimeZone 里换时区后，启动器会自动改名（例如 `Claude · Tokyo`），Dock 里的图标继续可用。
+- Spotlight 和 Raycast 能直接搜到它。
+- 图标是在你本机用 `/Applications/Claude.app` 的图标加一个小角标生成的，仓库里不包含 Claude 的图标。
+- 启动器随 CTimeZone 一起更新：CTimeZone 启动时发现模板变了，就替换 `~/Applications` 里的副本。
+- Claude 运行时 Dock 里会同时出现启动器和 Claude 本身两个图标，这是系统行为。建议把官方 Claude 图标移出 Dock，只留启动器。
+- 直接点官方 Claude 图标打开时仍然是系统时区，这一点不改 Claude.app 就做不到。
 
 ## 行为说明
 

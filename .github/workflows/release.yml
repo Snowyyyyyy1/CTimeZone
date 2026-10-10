@@ -83,6 +83,7 @@ jobs:
           [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "$BUILD" ]
           [ -n "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$PLIST")" ]
           [ -d "$APP/Contents/Frameworks/Sparkle.framework" ]
+          [ -x "$APP/Contents/Library/Helpers/ClaudeLauncher.app/Contents/MacOS/ClaudeLauncher" ]
           lipo -archs "$APP/Contents/MacOS/CTimeZone"
 
       - name: Package

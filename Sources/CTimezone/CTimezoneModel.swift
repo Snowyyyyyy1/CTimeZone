@@ -22,6 +22,8 @@ final class CTimezoneModel {
     private(set) var systemZone: SystemTimeZoneInfo
     private(set) var desktopMode: DesktopMode
     private(set) var desktopStatus: ClaudeDesktopController.Status
+    /// Installed Dock launcher, if the user added one.
+    private(set) var launcherURL: URL?
 
     let catalog: [String]
     let locations: [String: GeoPoint]
@@ -29,6 +31,8 @@ final class CTimezoneModel {
     private let store: ClaudeSettingsStore
     private let desktop: ClaudeDesktopController
     private let defaults: UserDefaults
+    private let launcher = LauncherInstaller.embeddedTemplate().map { LauncherInstaller(templateURL: $0) }
+    private static let launcherPathKey = "launcherPath"
 
     init(
         store: ClaudeSettingsStore = ClaudeSettingsStore(),
@@ -47,6 +51,10 @@ final class CTimezoneModel {
         self.selectedTimeZone = configured ?? nil
         self.desktopMode = DesktopModePreference.load(defaults, configuredTZ: configured ?? nil)
         self.desktopStatus = desktop.status()
+        self.launcherURL = defaults.string(forKey: Self.launcherPathKey)
+            .map { URL(fileURLWithPath: $0) }
+            .flatMap { FileManager.default.fileExists(atPath: $0.path) ? $0 : nil }
+        Task { await syncLauncher() }
     }
 
     var filteredCatalog: [String] {
@@ -175,6 +183,7 @@ final class CTimezoneModel {
     private func setDesktopMode(_ mode: DesktopMode) {
         desktopMode = mode
         DesktopModePreference.store(mode, in: defaults)
+        Task { await syncLauncher() }
     }
 
     // MARK: - Confirmation
@@ -192,5 +201,66 @@ final class CTimezoneModel {
             alert.alertStyle = .warning
             continuation.resume(returning: alert.runModal() == .alertFirstButtonReturn)
         }
+    }
+
+    // MARK: - Dock launcher
+
+    var canInstallLauncher: Bool { launcher != nil }
+
+    var launcherName: String { LauncherInstaller.displayName(for: desktopMode) }
+
+    func installLauncher() async {
+        guard launcher != nil else { return }
+        isBusy = true
+        defer { isBusy = false }
+        do {
+            let url = try await writeLauncher()
+            banner = Banner(
+                kind: .info,
+                text: "Drag \u{201C}\(launcherName)\u{201D} from Finder to the Dock. Spotlight and Raycast find it too."
+            )
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } catch {
+            banner = Banner(kind: .error, text: "Could not create the launcher: \(error.localizedDescription)")
+        }
+    }
+
+    func removeLauncher() {
+        guard let url = launcherURL, let launcher else { return }
+        do {
+            try launcher.remove(url)
+            launcherURL = nil
+            defaults.removeObject(forKey: Self.launcherPathKey)
+            banner = Banner(kind: .info, text: "Moved the launcher to the Trash.")
+        } catch {
+            banner = Banner(kind: .error, text: "Could not remove the launcher: \(error.localizedDescription)")
+        }
+    }
+
+    func revealLauncher() {
+        guard let url = launcherURL else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    /// Renames or refreshes an installed launcher after a zone change or an
+    /// app update. Never creates one the user did not ask for.
+    private func syncLauncher() async {
+        guard let url = launcherURL, let launcher, !launcher.isCurrent(url, for: desktopMode) else { return }
+        _ = try? await writeLauncher()
+    }
+
+    private func writeLauncher() async throws -> URL {
+        guard let launcher else { throw CocoaError(.fileNoSuchFile) }
+        let mode = desktopMode
+        let existing = launcherURL
+        let badge = NSApp.applicationIconImage ?? NSImage()
+        let icon = LauncherInstaller.badgedClaudeIcon(badge: badge)
+        // ditto and codesign block for a moment; keep them off the main thread.
+        let url = try await Task.detached {
+            try launcher.install(mode: mode, existing: existing, icon: icon)
+        }.value
+        launcherURL = url
+        defaults.set(url.path, forKey: Self.launcherPathKey)
+        return url
     }
 }

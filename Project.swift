@@ -50,8 +50,25 @@ let project = Project(
             ]),
             sources: ["Sources/CTimezone/**"],
             resources: ["Resources/Assets.xcassets"],
+            scripts: [
+                // The launcher ships inside CTimeZone so Sparkle updates both at once.
+                // CTimeZone copies it to ~/Applications when the user asks for it.
+                .post(
+                    script: """
+                    set -euo pipefail
+                    DEST="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Library/Helpers"
+                    mkdir -p "$DEST"
+                    rm -rf "$DEST/ClaudeLauncher.app"
+                    ditto "$BUILT_PRODUCTS_DIR/ClaudeLauncher.app" "$DEST/ClaudeLauncher.app"
+                    """,
+                    name: "Embed Claude Launcher",
+                    inputPaths: ["$(BUILT_PRODUCTS_DIR)/ClaudeLauncher.app"],
+                    outputPaths: ["$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Library/Helpers/ClaudeLauncher.app"]
+                )
+            ],
             dependencies: [
                 .target(name: "CTimezoneKit"),
+                .target(name: "ClaudeLauncher"),
                 .package(product: "Sparkle")
             ],
             settings: .settings(base: [
@@ -61,7 +78,37 @@ let project = Project(
                 "MARKETING_VERSION": "0.1.0",
                 "CURRENT_PROJECT_VERSION": "1",
                 "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
-                "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor"
+                "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+                // The embed script copies a whole bundle, which the script sandbox blocks.
+                "ENABLE_USER_SCRIPT_SANDBOXING": "NO"
+            ])
+        ),
+        // Windowless helper: opens Claude Desktop in the time zone chosen in
+        // CTimeZone, then quits. Installed copies are renamed per zone.
+        .target(
+            name: "ClaudeLauncher",
+            destinations: .macOS,
+            product: .app,
+            bundleId: "\(bundlePrefix).CTimezone.ClaudeLauncher",
+            deploymentTargets: .macOS("14.0"),
+            infoPlist: .extendingDefault(with: [
+                "CFBundleDisplayName": "Claude Launcher",
+                "CFBundleName": "Claude Launcher",
+                "LSUIElement": true,
+                "LSMinimumSystemVersion": "14.0",
+                "NSHumanReadableCopyright": "CTimeZone",
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)"
+            ]),
+            sources: ["Sources/ClaudeLauncher/**"],
+            resources: ["Resources/Assets.xcassets"],
+            dependencies: [.target(name: "CTimezoneKit")],
+            settings: .settings(base: [
+                "PRODUCT_NAME": "ClaudeLauncher",
+                "MARKETING_VERSION": "0.1.0",
+                "CURRENT_PROJECT_VERSION": "1",
+                "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
+                "SKIP_INSTALL": "YES"
             ])
         ),
         .target(
