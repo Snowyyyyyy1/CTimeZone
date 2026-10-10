@@ -43,7 +43,7 @@ struct CTimezoneView: View {
                     mac: model.systemZone.identifier.flatMap { model.locations[$0] },
                     claude: model.previewIdentifier.flatMap { model.locations[$0] }
                 )
-                .frame(maxWidth: 640, maxHeight: 230)
+                .frame(maxWidth: 640, maxHeight: 190)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
                 ClockComparison(
