@@ -97,18 +97,14 @@ jobs:
           shasum -a 256 "$NAME" | tee "$NAME.sha256"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
+      # The CHANGELOG.md section for this version becomes the GitHub release
+      # body and the notes in the in-app update dialog. No entry, no release.
       - name: Release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          PREV="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
-          {
-            echo "## Changes"
-            if [ -n "$PREV" ]; then
-              git log --no-merges --pretty='- %s' "$PREV..$GITHUB_REF_NAME"
-            else
-              echo "- First release"
-            fi
-          } > notes.md
+          scripts/changelog-section.sh "$VERSION" > notes.md
           cat notes.md
 
       # The existing appcast is the seed: generate_appcast keeps old items and

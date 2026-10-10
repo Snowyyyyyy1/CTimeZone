@@ -98,7 +98,8 @@ xcodebuild test -workspace CTimezone.xcworkspace -scheme CTimezoneKit \
 
 ## 发布（维护者）
 
-推一个 `vX.Y.Z` 标签，`.github/workflows/release.yml` 会构建通用二进制、打 DMG、发 GitHub Release，再把签好名的 appcast 推到 `gh-pages`。
+1. 在 [`CHANGELOG.md`](CHANGELOG.md) 写好这个版本的条目（`## X.Y.Z — 日期`）。它会原样成为 GitHub Release 的说明和应用内更新提示；没有条目，发布流程会停下。
+2. 推一个 `vX.Y.Z` 标签。`.github/workflows/release.yml` 会构建通用二进制、打 DMG、发 GitHub Release，再把签好名的 appcast 推到 `gh-pages`。
 
 ```bash
 git tag v0.2.0 && git push origin v0.2.0
