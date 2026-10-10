@@ -13,8 +13,9 @@ BIN="$(find .build/SourcePackages/artifacts -name generate_keys -type f 2>/dev/n
 [ -n "$BIN" ] || { echo "Build once so SwiftPM fetches Sparkle, then retry."; exit 1; }
 
 umask 077
-TMP="$(mktemp)"
-trap 'rm -f "$TMP"' EXIT
-"$BIN" --account ctimezone -x "$TMP" >/dev/null
-gh secret set SPARKLE_PRIVATE_ED_KEY --repo "$REPO" < "$TMP"
+# generate_keys refuses to overwrite, so export into a fresh private directory.
+DIR="$(mktemp -d)"
+trap 'rm -rf "$DIR"' EXIT
+"$BIN" --account ctimezone -x "$DIR/key" >/dev/null
+gh secret set SPARKLE_PRIVATE_ED_KEY --repo "$REPO" < "$DIR/key"
 echo "Set SPARKLE_PRIVATE_ED_KEY on $REPO"
