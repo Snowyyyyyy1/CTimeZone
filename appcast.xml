@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>CTimeZone</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Sat, 10 Oct 2026 10:56:08 +0000</pubDate>
+            <sparkle:version>100</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown">## Changes
+- First release
+</description>
+            <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.1.0/CTimeZone-0.1.0.dmg" length="3249343" type="application/octet-stream" sparkle:edSignature="gfRglHga8xlXMOYSQWbqj7lfLfOvnF5oP3Z6xB8RtJNdUcQTwG/6pyFXCubiReyOVj3/V5wacZQa5Rwuoz5EBA==" />
+        </item>
+    </channel>
+</rss>
