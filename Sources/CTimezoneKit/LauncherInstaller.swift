@@ -13,6 +13,9 @@ public struct LauncherInstaller: Sendable {
     /// Info.plist key recording which template build an installed copy came from.
     public static let digestKey = "CTZTemplateDigest"
     static let iconName = "LauncherIcon"
+    /// Bump when `badgedClaudeIcon` changes so installed copies get redrawn;
+    /// the executable digest alone does not see icon changes.
+    static let iconRevision = 2
 
     public let templateURL: URL
     public let applicationsDirectory: URL
@@ -69,7 +72,7 @@ public struct LauncherInstaller: Sendable {
     func templateDigest() throws -> String {
         let executable = templateURL.appendingPathComponent("Contents/MacOS/ClaudeLauncher")
         let digest = SHA256.hash(data: try Data(contentsOf: executable))
-        return digest.map { String(format: "%02x", $0) }.joined()
+        return digest.map { String(format: "%02x", $0) }.joined() + "-icon\(Self.iconRevision)"
     }
 
     // MARK: - Install / remove
@@ -111,6 +114,9 @@ public struct LauncherInstaller: Sendable {
         } else {
             try fm.moveItem(at: staging, to: target)
         }
+        // ditto keeps the template's timestamps, so the icon cache would keep
+        // serving the previous icon for this path. A fresh date invalidates it.
+        try? fm.setAttributes([.modificationDate: Date()], ofItemAtPath: target.path)
         LSRegisterURL(target as CFURL, true)
         return target
     }
@@ -144,8 +150,13 @@ public struct LauncherInstaller: Sendable {
         let size = NSSize(width: 1024, height: 1024)
         return NSImage(size: size, flipped: false) { rect in
             base.draw(in: rect)
-            let side = rect.width * 0.42
-            badge.draw(in: NSRect(x: rect.maxX - side - rect.width * 0.02, y: rect.width * 0.02,
+            // Keep the badge inside the 824/1024 icon body. Anything past the
+            // body's edge makes macOS treat the icon as non-conforming and
+            // wrap it in a grey plate.
+            let body = rect.insetBy(dx: rect.width * 100 / 1024, dy: rect.height * 100 / 1024)
+            let side = body.width * 0.40
+            let inset = body.width * 0.03
+            badge.draw(in: NSRect(x: body.maxX - side - inset, y: body.minY + inset,
                                   width: side, height: side))
             return true
         }

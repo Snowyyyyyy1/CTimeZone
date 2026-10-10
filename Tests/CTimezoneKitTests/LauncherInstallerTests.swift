@@ -45,6 +45,9 @@ final class LauncherInstallerTests: XCTestCase {
         XCTAssertTrue(installer.isCurrent(URL(fileURLWithPath: url.path, isDirectory: true), for: .fixed("Europe/Amsterdam")))
         XCTAssertEqual(try shell("/usr/bin/codesign", ["--verify", url.path]), 0)
         XCTAssertEqual(try stagingLeftovers(), [])
+        // A fresh date keeps the icon cache from serving a previous launcher's icon.
+        let modified = try FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date
+        XCTAssertLessThan(abs(modified?.timeIntervalSinceNow ?? .infinity), 60)
     }
 
     func testZoneChangeRenamesInPlace() throws {
