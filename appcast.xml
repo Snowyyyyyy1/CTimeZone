@@ -3,6 +3,19 @@
     <channel>
         <title>CTimeZone</title>
         <item>
+            <title>0.3.1</title>
+            <pubDate>Sun, 11 Oct 2026 04:17:51 +0000</pubDate>
+            <sparkle:version>301</sparkle:version>
+            <sparkle:shortVersionString>0.3.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown">### 新增
+
+- **应用内切换语言**：菜单 **CTimeZone → 设置…**（⌘,）里可以选「跟随系统」「English」或「简体中文」，点「立即重启」后生效。
+- Dock 启动器跟着 CTimeZone 用同一种语言。在系统设置里给 CTimeZone 单独选的语言，下次打开 CTimeZone 时也会同步给启动器。
+</description>
+            <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.3.1/CTimeZone-0.3.1.dmg" length="5532240" type="application/octet-stream" sparkle:edSignature="RnUsxFQC7Amn3NeqnEDE08qasRkVheZo02RirtpvOXi/iO91kSAaUHQmOqqt8WF+3cgfab5TFQx1He/YaAQkCQ==" />
+        </item>
+        <item>
             <title>0.3.0</title>
             <pubDate>Sun, 11 Oct 2026 03:38:11 +0000</pubDate>
             <sparkle:version>300</sparkle:version>
@@ -48,17 +61,6 @@
 - Claude 运行时，Dock 里会同时出现启动器和 Claude 本身两个图标，这是系统行为。建议把官方 Claude 图标移出 Dock，只留启动器。
 </description>
             <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.2.0/CTimeZone-0.2.0.dmg" length="5420575" type="application/octet-stream" sparkle:edSignature="rHBSczaXsql+1CAeXHCsdBMAFzA6ObYF3FZa5essG1MUFnpsDv6wrhhDeusz4NM1VijpVvXyHVxLrR3j8LT0Aw==" />
-        </item>
-        <item>
-            <title>0.1.0</title>
-            <pubDate>Sat, 10 Oct 2026 10:56:08 +0000</pubDate>
-            <sparkle:version>100</sparkle:version>
-            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown">## Changes
-- First release
-</description>
-            <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.1.0/CTimeZone-0.1.0.dmg" length="3249343" type="application/octet-stream" sparkle:edSignature="gfRglHga8xlXMOYSQWbqj7lfLfOvnF5oP3Z6xB8RtJNdUcQTwG/6pyFXCubiReyOVj3/V5wacZQa5Rwuoz5EBA==" />
         </item>
     </channel>
 </rss>
