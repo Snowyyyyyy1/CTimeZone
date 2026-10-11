@@ -267,6 +267,16 @@
         }
       }
     },
+    "Follow System": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随系统"
+          }
+        }
+      }
+    },
     "Hide Mac Time Zone": {
       "localizations": {
         "zh-Hans": {
@@ -303,6 +313,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "直接打开"
+          }
+        }
+      }
+    },
+    "Language": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言"
           }
         }
       }
@@ -507,6 +527,26 @@
         }
       }
     },
+    "Restart CTimeZone to use the new language.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重启 CTimeZone 后改用新语言。"
+          }
+        }
+      }
+    },
+    "Restart Now": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即重启"
+          }
+        }
+      }
+    },
     "Running in %@": {
       "localizations": {
         "zh-Hans": {
@@ -623,6 +663,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法确定系统时区，没法生成启动环境。"
+          }
+        }
+      }
+    },
+    "The Dock launcher follows this setting too.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock 启动器也会跟着改用这个语言。"
           }
         }
       }

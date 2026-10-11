@@ -4,6 +4,11 @@ import SwiftUI
 struct CTimezoneApp: App {
     @StateObject private var updater = UpdaterService.shared
 
+    init() {
+        _ = LanguageSettings.launched
+        LanguageSettings.syncLauncher()
+    }
+
     var body: some Scene {
         Window("CTimeZone", id: "main") {
             CTimezoneView()
@@ -16,6 +21,10 @@ struct CTimezoneApp: App {
                     .disabled(!updater.canCheckForUpdates)
                     .help(updater.availability.reason ?? "")
             }
+        }
+
+        Settings {
+            LanguageSettingsView()
         }
     }
 }
