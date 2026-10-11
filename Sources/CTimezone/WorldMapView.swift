@@ -7,7 +7,10 @@ struct WorldMapView: View {
     let mac: GeoPoint?
     let claude: GeoPoint?
 
+    @Environment(\.colorScheme) private var colorScheme
+
     private static let aspect = CGFloat(LandMask.columns) / CGFloat(LandMask.rows)
+    private static let veilSteps = 6
 
     var body: some View {
         // The terminator moves ~0.25° a minute; redraw per minute, not per second.
@@ -26,22 +29,40 @@ struct WorldMapView: View {
         let pitch = size.width / CGFloat(LandMask.columns)
         let radius = pitch * 0.36
 
-        // Bucket dots by brightness so the whole map is a handful of fills.
-        var day = Path(), dusk = Path(), night = Path()
+        var land = Path()
+        // Night is a translucent black veil over every cell past the
+        // terminator, ramped through twilight. Cells are bucketed by shade so
+        // the veil stays a handful of fills.
+        var veil = Array(repeating: Path(), count: Self.veilSteps)
         for row in 0..<LandMask.rows {
-            for column in 0..<LandMask.columns where LandMask.isLand(column: column, row: row) {
+            for column in 0..<LandMask.columns {
                 let c = LandMask.coordinate(column: column, row: row)
                 let light = SolarPosition.daylight(at: GeoPoint(latitude: c.latitude, longitude: c.longitude), sun: sun)
-                let center = CGPoint(x: (CGFloat(column) + 0.5) * pitch, y: (CGFloat(row) + 0.5) * pitch)
-                let dot = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
-                if light > 0.08 { day.addEllipse(in: dot) }
-                else if light > -0.08 { dusk.addEllipse(in: dot) }
-                else { night.addEllipse(in: dot) }
+                let cell = CGRect(x: CGFloat(column) * pitch, y: CGFloat(row) * pitch, width: pitch, height: pitch)
+                let darkness = min(max((0.08 - light) / 0.16, 0), 1)
+                let step = Int((darkness * Double(Self.veilSteps)).rounded(.up))
+                if step > 0 { veil[step - 1].addRect(Self.bleed(cell, column: column, row: row, by: pitch * 4)) }
+                if LandMask.isLand(column: column, row: row) {
+                    land.addEllipse(in: cell.insetBy(dx: pitch / 2 - radius, dy: pitch / 2 - radius))
+                }
             }
         }
-        gc.fill(night, with: .color(.primary.opacity(0.12)))
-        gc.fill(dusk, with: .color(.primary.opacity(0.3)))
-        gc.fill(day, with: .color(.primary.opacity(0.62)))
+        gc.fill(land, with: .color(.primary.opacity(0.5)))
+        // A black veil barely shows on a dark card, so dark mode needs far more of it.
+        let nightOpacity = colorScheme == .dark ? 0.6 : 0.28
+        gc.drawLayer { clipped in
+            // Night reaches the map's edges, so the veil ends there at full
+            // strength; edge cells bleed outward so the blur cannot thin them.
+            clipped.clip(to: Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: pitch * 2.5))
+            clipped.drawLayer { layer in
+                // Blurring hides the 2° grid steps and the seams between cells.
+                layer.addFilter(.blur(radius: pitch * 1.2))
+                for (index, path) in veil.enumerated() {
+                    let opacity = nightOpacity * Double(index + 1) / Double(Self.veilSteps)
+                    layer.fill(path, with: .color(.black.opacity(opacity)))
+                }
+            }
+        }
 
         let macPoint = mac.map { project($0, size: size) }
         let claudePoint = claude.map { project($0, size: size) }
@@ -61,6 +82,16 @@ struct WorldMapView: View {
             gc.fill(Path(ellipseIn: dot), with: .color(.accentColor))
             label("Claude", at: b, awayFrom: macPoint, in: &gc, size: size, color: .accentColor)
         }
+    }
+
+    /// Extends a cell on the map's border outward by `amount`.
+    private static func bleed(_ cell: CGRect, column: Int, row: Int, by amount: CGFloat) -> CGRect {
+        var rect = cell
+        if column == 0 { rect.origin.x -= amount; rect.size.width += amount }
+        if column == LandMask.columns - 1 { rect.size.width += amount }
+        if row == 0 { rect.origin.y -= amount; rect.size.height += amount }
+        if row == LandMask.rows - 1 { rect.size.height += amount }
+        return rect
     }
 
     /// Dotted arc from Mac to Claude, echoing the app icon's offset arc. It
