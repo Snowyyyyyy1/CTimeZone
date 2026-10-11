@@ -25,4 +25,14 @@ final class TimezonesTests: XCTestCase {
         XCTAssertTrue(catalog.contains("Europe/Amsterdam"))
         XCTAssertEqual(catalog, catalog.sorted())
     }
+
+    func testCityNamesFollowTheLocale() {
+        let zones = ["America/New_York", "Asia/Shanghai", "UTC"]
+        let chinese = Timezones.cityNames(for: zones, locale: Locale(identifier: "zh-Hans"))
+        XCTAssertEqual(chinese["America/New_York"], "纽约")
+        XCTAssertEqual(chinese["Asia/Shanghai"], "上海")
+        XCTAssertEqual(chinese["UTC"], "UTC")
+        let english = Timezones.cityNames(for: zones, locale: Locale(identifier: "en"))
+        XCTAssertEqual(english["America/New_York"], "New York")
+    }
 }

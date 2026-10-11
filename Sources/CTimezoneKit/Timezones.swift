@@ -16,6 +16,29 @@ public enum Timezones {
         ids.insert("UTC")
         return ids.sorted()
     }
+
+    /// City names in `locale`, keyed by identifier: "America/New_York" -> "纽约".
+    /// Uses ICU's exemplar city; zones without one, such as `UTC`, keep the
+    /// last identifier component.
+    public static func cityNames(for zones: [String], locale: Locale) -> [String: String] {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.dateFormat = "VVV"
+        formatter.timeZone = TimeZone(identifier: "GMT")
+        let unknown = formatter.string(from: .now)
+        var names: [String: String] = [:]
+        for zone in zones {
+            let fallback = LauncherInstaller.city(of: zone)
+            guard let timeZone = TimeZone(identifier: zone) else {
+                names[zone] = fallback
+                continue
+            }
+            formatter.timeZone = timeZone
+            let city = formatter.string(from: .now)
+            names[zone] = city == unknown ? fallback : city
+        }
+        return names
+    }
 }
 
 /// The macOS system time zone, resolved independently of the current process

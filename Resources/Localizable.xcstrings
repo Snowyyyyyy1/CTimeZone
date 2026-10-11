@@ -24,12 +24,82 @@
         }
       }
     },
+    "Africa": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非洲"
+          }
+        }
+      }
+    },
+    "America": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "美洲"
+          }
+        }
+      }
+    },
+    "Antarctica": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "南极洲"
+          }
+        }
+      }
+    },
     "Apply": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "应用"
+          }
+        }
+      }
+    },
+    "Arctic": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "北极"
+          }
+        }
+      }
+    },
+    "Asia": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亚洲"
+          }
+        }
+      }
+    },
+    "Atlantic": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大西洋"
+          }
+        }
+      }
+    },
+    "Australia": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "澳大利亚"
           }
         }
       }
@@ -267,6 +337,16 @@
         }
       }
     },
+    "Europe": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "欧洲"
+          }
+        }
+      }
+    },
     "Follow System": {
       "localizations": {
         "zh-Hans": {
@@ -293,6 +373,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "如果 Claude 申请在 sandbox 外重新执行命令，同意后它就可能查到时区。auto mode 下可能不经询问就自动同意。"
+          }
+        }
+      }
+    },
+    "Indian Ocean": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印度洋"
           }
         }
       }
@@ -423,6 +513,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "从 Dock 或 Spotlight 以 %@ 打开 Claude"
+          }
+        }
+      }
+    },
+    "Pacific": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "太平洋"
           }
         }
       }

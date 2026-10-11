@@ -34,8 +34,8 @@ let project = Project(
             bundleId: "\(bundlePrefix).CTimezone",
             deploymentTargets: .macOS("14.0"),
             infoPlist: .extendingDefault(with: [
-                "CFBundleDisplayName": "CTimeZone",
-                "CFBundleName": "CTimeZone",
+                "CFBundleDisplayName": "$(APP_DISPLAY_NAME)",
+                "CFBundleName": "$(APP_DISPLAY_NAME)",
                 "LSUIElement": false,
                 "LSMinimumSystemVersion": "14.0",
                 "NSHumanReadableCopyright": "CTimeZone",
@@ -73,6 +73,7 @@ let project = Project(
             ],
             settings: .settings(base: [
                 "PRODUCT_NAME": "CTimeZone",
+                "APP_DISPLAY_NAME": "CTimeZone",
                 // Release builds override both from the git tag (see release.yml).
                 // Sparkle compares CFBundleVersion, so it must grow with every release.
                 "MARKETING_VERSION": "0.1.0",
@@ -81,6 +82,14 @@ let project = Project(
                 "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
                 // The embed script copies a whole bundle, which the script sandbox blocks.
                 "ENABLE_USER_SCRIPT_SANDBOXING": "NO"
+            ], configurations: [
+                // Local builds get their own name and a DEV badge so they are
+                // never mistaken for the installed release in Launchpad or the Dock.
+                .debug(name: .debug, settings: [
+                    "APP_DISPLAY_NAME": "CTimeZone Dev",
+                    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon-Dev"
+                ]),
+                .release(name: .release)
             ])
         ),
         // Windowless helper: opens Claude Desktop in the time zone chosen in

@@ -21,7 +21,7 @@ struct CTimezoneView: View {
     private var zoneSidebar: some View {
         ScrollViewReader { proxy in
             List(model.filteredCatalog, id: \.self, selection: $model.selectedTimeZone) { zone in
-                ZoneRow(zone: zone, isConfigured: zone == model.cliConfiguredTZ)
+                ZoneRow(zone: zone, city: model.cityNames[zone] ?? zone, isConfigured: zone == model.cliConfiguredTZ)
                     .tag(zone)
                     .accessibilityIdentifier("ctz.zone.\(zone)")
             }
@@ -258,12 +258,12 @@ struct CTimezoneView: View {
 
 private struct ZoneRow: View {
     let zone: String
+    let city: String
     let isConfigured: Bool
 
     var body: some View {
         let parts = zone.split(separator: "/")
-        let city = (parts.last.map(String.init) ?? zone).replacingOccurrences(of: "_", with: " ")
-        let region = parts.dropLast().joined(separator: " / ").replacingOccurrences(of: "_", with: " ")
+        let region = parts.count > 1 ? Self.region(String(parts[0])) : ""
 
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
@@ -288,6 +288,24 @@ private struct ZoneRow: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
+    }
+
+    /// The identifier's first component. The city name already carries any
+    /// middle component, as in "Knox, Indiana".
+    private static func region(_ area: String) -> String {
+        switch area {
+        case "Africa": String(localized: "Africa")
+        case "America": String(localized: "America")
+        case "Antarctica": String(localized: "Antarctica")
+        case "Arctic": String(localized: "Arctic")
+        case "Asia": String(localized: "Asia")
+        case "Atlantic": String(localized: "Atlantic")
+        case "Australia": String(localized: "Australia")
+        case "Europe": String(localized: "Europe")
+        case "Indian": String(localized: "Indian Ocean")
+        case "Pacific": String(localized: "Pacific")
+        default: area
+        }
     }
 }
 

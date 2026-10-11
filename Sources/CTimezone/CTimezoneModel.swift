@@ -28,6 +28,8 @@ final class CTimezoneModel {
     private(set) var launcherURL: URL?
 
     let catalog: [String]
+    /// City names in the interface language; the language only changes on relaunch.
+    let cityNames: [String: String]
     let locations: [String: GeoPoint]
 
     private let store: ClaudeSettingsStore
@@ -48,6 +50,10 @@ final class CTimezoneModel {
         self.desktop = desktop
         self.defaults = defaults
         self.catalog = Timezones.catalog()
+        self.cityNames = Timezones.cityNames(
+            for: catalog,
+            locale: Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en")
+        )
         self.locations = ZoneLocations.load()
         self.systemZone = SystemTimeZoneResolver.resolve()
 
@@ -68,7 +74,10 @@ final class CTimezoneModel {
         guard !query.isEmpty else { return catalog }
         // Match "new york" against "America/New_York".
         let normalized = query.replacingOccurrences(of: " ", with: "_")
-        return catalog.filter { $0.localizedCaseInsensitiveContains(normalized) }
+        return catalog.filter {
+            $0.localizedCaseInsensitiveContains(normalized)
+                || cityNames[$0]?.localizedCaseInsensitiveContains(query) == true
+        }
     }
 
     /// Zone shown on the Claude clock: the pending selection, else the Desktop target.
