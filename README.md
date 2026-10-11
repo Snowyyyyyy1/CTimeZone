@@ -56,6 +56,27 @@
 
 在 CTimeZone 里换时区后，启动器会自动改名，Dock 里的图标继续可用。Claude 运行时 Dock 里会同时出现启动器和 Claude 两个图标，建议把官方 Claude 图标移出 Dock。
 
+## 局限：不能隐藏系统时区
+
+CTimeZone 只改变 Claude 看到的本地时间，不会隐藏 Mac 的真实时区。Claude Code 能执行命令，主动去查就能看到，例如：
+
+- `readlink /etc/localtime`
+- `defaults read /Library/Preferences/.GlobalPreferences com.apple.TimeZonePref.Last_Selected_City`
+- 系统语言和地区设置、出口 IP
+
+`defaults` 经由系统的偏好设置服务读取，Claude Code 自带的 sandbox 也拦不住。Claude Desktop 的普通聊天不能执行命令，不受影响。
+
+需要彻底隔离时，在 [dev container](https://code.claude.com/docs/en/devcontainer) 里运行 Claude Code，让容器自己的系统时区就是目标时区。以官方[参考配置](https://github.com/anthropics/claude-code/tree/main/.devcontainer)为基础：
+
+1. 在 `devcontainer.json` 里把构建参数 `TZ` 改成目标时区，例如 `"TZ": "Asia/Tokyo"`。默认值取宿主的 `TZ` 环境变量，没设时是 `America/Los_Angeles`。
+2. 在 `Dockerfile` 的 `ENV TZ="$TZ"` 后面加一行，让 `/etc/localtime` 也指向同一个时区：
+
+   ```dockerfile
+   RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo "$TZ" > /etc/timezone
+   ```
+
+出口 IP 仍然和 Mac 相同，需要的话另配代理。
+
 ## 构建
 
 依赖 [Tuist](https://tuist.dev)（版本见 `.mise.toml`）和 Xcode。
