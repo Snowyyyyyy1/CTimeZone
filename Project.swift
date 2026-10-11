@@ -11,7 +11,7 @@ let sparklePublicKey = "9sidt3/qLWykaiyqlRhd50gU94Ll7s+cdisiCpdEQD0="
 let project = Project(
     name: "CTimezone",
     options: .options(
-        defaultKnownRegions: ["en"],
+        defaultKnownRegions: ["en", "zh-Hans"],
         developmentRegion: "en"
     ),
     packages: [
@@ -49,7 +49,7 @@ let project = Project(
                 "SUScheduledCheckInterval": 86400
             ]),
             sources: ["Sources/CTimezone/**"],
-            resources: ["Resources/Assets.xcassets"],
+            resources: ["Resources/Assets.xcassets", "Resources/Localizable.xcstrings"],
             scripts: [
                 // The launcher ships inside CTimeZone so Sparkle updates both at once.
                 // CTimeZone copies it to ~/Applications when the user asks for it.
@@ -101,7 +101,7 @@ let project = Project(
                 "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)"
             ]),
             sources: ["Sources/ClaudeLauncher/**"],
-            resources: ["Resources/Assets.xcassets"],
+            resources: ["Resources/Assets.xcassets", "Resources/Localizable.xcstrings"],
             dependencies: [.target(name: "CTimezoneKit")],
             settings: .settings(base: [
                 "PRODUCT_NAME": "ClaudeLauncher",

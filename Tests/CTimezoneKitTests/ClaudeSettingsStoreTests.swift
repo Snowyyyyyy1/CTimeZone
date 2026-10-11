@@ -179,4 +179,110 @@ final class ClaudeSettingsStoreTests: XCTestCase {
         let backup = try XCTUnwrap(try store().setTimeZone("Europe/Amsterdam"))
         XCTAssertEqual(try mode(of: backup), 0o600)
     }
+
+    // MARK: - Time zone shield
+
+    private let paths = ClaudeSettingsStore.shieldReadPaths
+    private let rules = ClaudeSettingsStore.shieldReadRules
+
+    func testShieldRulesUseAbsolutePathPrefix() {
+        XCTAssertEqual(rules.first, "Read(//etc/localtime)")
+    }
+
+    func testShieldOffWhenFileAbsent() throws {
+        XCTAssertFalse(try store().isTimeZoneShieldOn())
+    }
+
+    func testEnableShieldOnMissingFile() throws {
+        let result = try store().enableTimeZoneShield()
+        XCTAssertNil(result.backup)
+        XCTAssertTrue(result.enabledSandbox)
+        XCTAssertTrue(try store().isTimeZoneShieldOn())
+        let root = try readRoot()
+        let sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
+        XCTAssertEqual((sandbox["filesystem"] as? [String: Any])?["denyRead"] as? [String], paths)
+        XCTAssertEqual((root["permissions"] as? [String: Any])?["deny"] as? [String], rules)
+    }
+
+    func testEnableShieldMergesWithUserEntries() throws {
+        try write(#"""
+        {"env":{"TZ":"Asia/Tokyo"},"sandbox":{"enabled":true,"excludedCommands":["gh *"],
+         "filesystem":{"denyRead":["~/.ssh","/etc/localtime"]}},
+         "permissions":{"allow":["Bash(ls)"],"deny":["Read(./.env)"]}}
+        """#)
+        let result = try store().enableTimeZoneShield()
+        XCTAssertNotNil(result.backup)
+        XCTAssertFalse(result.enabledSandbox)
+        let root = try readRoot()
+        XCTAssertEqual((root["env"] as? [String: Any])?["TZ"] as? String, "Asia/Tokyo")
+        let sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
+        XCTAssertEqual(sandbox["excludedCommands"] as? [String], ["gh *"])
+        XCTAssertEqual(
+            (sandbox["filesystem"] as? [String: Any])?["denyRead"] as? [String],
+            ["~/.ssh", "/etc/localtime", "/private/etc/localtime", "/Library/Preferences/.GlobalPreferences.plist"]
+        )
+        let permissions = try XCTUnwrap(root["permissions"] as? [String: Any])
+        XCTAssertEqual(permissions["allow"] as? [String], ["Bash(ls)"])
+        XCTAssertEqual(permissions["deny"] as? [String], ["Read(./.env)"] + rules)
+    }
+
+    func testEnableShieldIsNoOpWhenAlreadyOn() throws {
+        _ = try store().enableTimeZoneShield()
+        let again = try store().enableTimeZoneShield()
+        XCTAssertNil(again.backup)
+        XCTAssertFalse(again.enabledSandbox)
+    }
+
+    func testShieldOffWhenSandboxDisabled() throws {
+        _ = try store().enableTimeZoneShield()
+        var root = try readRoot()
+        var sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
+        sandbox["enabled"] = false
+        root["sandbox"] = sandbox
+        try JSONSerialization.data(withJSONObject: root).write(to: settingsURL)
+        XCTAssertFalse(try store().isTimeZoneShieldOn())
+    }
+
+    func testDisableShieldRestoresOriginalDocument() throws {
+        try write(#"{"env":{"TZ":"Asia/Tokyo"}}"#)
+        let result = try store().enableTimeZoneShield()
+        try store().disableTimeZoneShield(disableSandbox: result.enabledSandbox)
+        XCTAssertEqual(try readRoot() as NSDictionary, ["env": ["TZ": "Asia/Tokyo"]] as NSDictionary)
+    }
+
+    func testDisableShieldKeepsUserSandboxAndEntries() throws {
+        try write(#"""
+        {"sandbox":{"enabled":true,"filesystem":{"denyRead":["~/.ssh"]}},"permissions":{"deny":["Read(./.env)"]}}
+        """#)
+        let result = try store().enableTimeZoneShield()
+        try store().disableTimeZoneShield(disableSandbox: result.enabledSandbox)
+        let root = try readRoot()
+        let sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
+        XCTAssertEqual(sandbox["enabled"] as? Bool, true)
+        XCTAssertEqual((sandbox["filesystem"] as? [String: Any])?["denyRead"] as? [String], ["~/.ssh"])
+        XCTAssertEqual((root["permissions"] as? [String: Any])?["deny"] as? [String], ["Read(./.env)"])
+    }
+
+    func testDisableShieldOnMissingFileDoesNotCreateFile() throws {
+        XCTAssertNil(try store().disableTimeZoneShield(disableSandbox: true))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: settingsURL.path))
+    }
+
+    func testEnableShieldMalformedSandboxDoesNotOverwrite() throws {
+        try write(#"{"sandbox":{"filesystem":{"denyRead":"~/.ssh"}}}"#)
+        XCTAssertThrowsError(try store().enableTimeZoneShield()) {
+            XCTAssertEqual($0 as? ClaudeSettingsStore.StoreError, .malformedSandbox)
+        }
+        XCTAssertEqual(
+            try String(contentsOf: settingsURL, encoding: .utf8),
+            #"{"sandbox":{"filesystem":{"denyRead":"~/.ssh"}}}"#
+        )
+    }
+
+    func testEnableShieldMalformedPermissionsThrows() throws {
+        try write(#"{"permissions":{"deny":[1]}}"#)
+        XCTAssertThrowsError(try store().enableTimeZoneShield()) {
+            XCTAssertEqual($0 as? ClaudeSettingsStore.StoreError, .malformedPermissions)
+        }
+    }
 }

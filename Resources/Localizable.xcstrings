@@ -1,0 +1,752 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ in ~/Applications": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@，位于 ~/Applications"
+          }
+        }
+      }
+    },
+    "--:--:--": {
+      "shouldTranslate": false
+    },
+    "Add to Dock…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加到 Dock…"
+          }
+        }
+      }
+    },
+    "Apply": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用"
+          }
+        }
+      }
+    },
+    "CTimeZone": {
+      "shouldTranslate": false
+    },
+    "Cancel": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "Check for Updates…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新…"
+          }
+        }
+      }
+    },
+    "City or region": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "城市或地区"
+          }
+        }
+      }
+    },
+    "Claude Code + URL Handler": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code + URL Handler"
+          }
+        }
+      }
+    },
+    "Claude Code reads env.TZ from ~/.claude/settings.json; restart sessions to apply. Desktop only gets a launch environment, never what Claude detects on its servers.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code 从 ~/.claude/settings.json 读取 env.TZ，重启会话后生效。Claude Desktop 只改启动环境，影响不到 Claude 在服务器端检测到的信息。"
+          }
+        }
+      }
+    },
+    "Claude Code's sandbox blocks reading it": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code 的 sandbox 已禁止读取"
+          }
+        }
+      }
+    },
+    "Claude Code's sandbox now blocks reading the Mac's time zone. Restart sessions to apply.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code 的 sandbox 现在会禁止读取 Mac 的时区。重启会话后生效。"
+          }
+        }
+      }
+    },
+    "Claude Desktop": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Desktop"
+          }
+        }
+      }
+    },
+    "Claude Desktop already runs with TZ=%@; brought to front.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Desktop 已经以 TZ=%@ 运行，已切到前台。"
+          }
+        }
+      }
+    },
+    "Claude Desktop is running with a different or unknown time zone. CTimeZone will ask it to quit gracefully, then relaunch it with TZ=%@. Unsaved work in Claude may be affected.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Desktop 正以其他时区或未知时区运行。CTimeZone 会先让它正常退出，再以 TZ=%@ 重新打开。Claude 里未保存的内容可能会受影响。"
+          }
+        }
+      }
+    },
+    "Claude is not installed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有安装 Claude"
+          }
+        }
+      }
+    },
+    "Claude is running in %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude 正以 %@ 运行"
+          }
+        }
+      }
+    },
+    "Claude · preview": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude · 预览"
+          }
+        }
+      }
+    },
+    "Claude's clock, not your Mac's": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "给 Claude 的时钟，不动你的 Mac"
+          }
+        }
+      }
+    },
+    "Could not create the launcher: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法创建启动器：%@"
+          }
+        }
+      }
+    },
+    "Could not open Claude": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法打开 Claude"
+          }
+        }
+      }
+    },
+    "Could not remove the launcher: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法移除启动器：%@"
+          }
+        }
+      }
+    },
+    "Could not update settings.json: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法更新 settings.json：%@"
+          }
+        }
+      }
+    },
+    "Development builds do not update themselves.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开发版不会自动更新。"
+          }
+        }
+      }
+    },
+    "Difference %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时差 %@"
+          }
+        }
+      }
+    },
+    "Dismiss": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        }
+      }
+    },
+    "Dock Launcher": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock 启动器"
+          }
+        }
+      }
+    },
+    "Drag “%@” from Finder to the Dock. Spotlight and Raycast find it too.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把「%@」从访达拖到 Dock。Spotlight 和 Raycast 也能搜到它。"
+          }
+        }
+      }
+    },
+    "Hide Mac Time Zone": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 Mac 时区"
+          }
+        }
+      }
+    },
+    "If Claude asks to rerun a command outside the sandbox, approving it can reveal the zone. Auto mode may approve it without asking.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如果 Claude 申请在 sandbox 外重新执行命令，同意后它就可能查到时区。auto mode 下可能不经询问就自动同意。"
+          }
+        }
+      }
+    },
+    "Install Claude Desktop in /Applications, then try again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请把 Claude Desktop 安装到 /Applications 后再试。"
+          }
+        }
+      }
+    },
+    "Just Open": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接打开"
+          }
+        }
+      }
+    },
+    "Launch failed: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动失败：%@"
+          }
+        }
+      }
+    },
+    "Launched Claude Desktop with TZ=%@.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已以 TZ=%@ 启动 Claude Desktop。"
+          }
+        }
+      }
+    },
+    "Move CTimeZone to Applications to enable updates.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把 CTimeZone 移到「应用程序」文件夹后才能自动更新。"
+          }
+        }
+      }
+    },
+    "Moved the launcher to the Trash.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已把启动器移到废纸篓。"
+          }
+        }
+      }
+    },
+    "Not a valid IANA time zone: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不是有效的 IANA 时区：%@"
+          }
+        }
+      }
+    },
+    "Not running · opens in %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未运行 · 将以 %@ 打开"
+          }
+        }
+      }
+    },
+    "Off · Claude Code can look it up": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已关闭 · Claude Code 能查到"
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
+          }
+        }
+      }
+    },
+    "Open CTimeZone and choose a time zone for Claude.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请打开 CTimeZone，为 Claude 选择一个时区。"
+          }
+        }
+      }
+    },
+    "Open Claude in %@ from the Dock or Spotlight": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从 Dock 或 Spotlight 以 %@ 打开 Claude"
+          }
+        }
+      }
+    },
+    "Process fallback": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "进程回退值"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新"
+          }
+        }
+      }
+    },
+    "Refresh status": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新状态"
+          }
+        }
+      }
+    },
+    "Relaunch": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新启动"
+          }
+        }
+      }
+    },
+    "Relaunch Claude Desktop?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要重新启动 Claude Desktop 吗？"
+          }
+        }
+      }
+    },
+    "Relaunch it in %@? Claude quits normally first; unsaved work in Claude may be affected.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要以 %@ 重新启动吗？Claude 会先正常退出，未保存的内容可能会受影响。"
+          }
+        }
+      }
+    },
+    "Relaunched Claude Desktop with TZ=%@.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已以 TZ=%@ 重新启动 Claude Desktop。"
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
+          }
+        }
+      }
+    },
+    "Removed env.TZ. Claude Code / URL Handler will use the system time zone after restart.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已删除 env.TZ。重启后 Claude Code 和 URL Handler 会使用系统时区。"
+          }
+        }
+      }
+    },
+    "Removed the sandbox rules that hide the Mac's time zone.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已删除隐藏 Mac 时区的 sandbox 规则。"
+          }
+        }
+      }
+    },
+    "Running in %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正以 %@ 运行"
+          }
+        }
+      }
+    },
+    "Running in %@ · relaunch for %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正以 %1$@ 运行 · 重启后改用 %2$@"
+          }
+        }
+      }
+    },
+    "Running in system zone · relaunch for %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正以系统时区运行 · 重启后改用 %@"
+          }
+        }
+      }
+    },
+    "Running, zone unreadable · target %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在运行，读不到时区 · 目标 %@"
+          }
+        }
+      }
+    },
+    "Same time": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时间相同"
+          }
+        }
+      }
+    },
+    "Saved": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
+          }
+        }
+      }
+    },
+    "Saved env.TZ=%@ for Claude Code and URL Handler. Restart those sessions to apply.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已为 Claude Code 和 URL Handler 保存 env.TZ=%@，重启这些会话后生效。"
+          }
+        }
+      }
+    },
+    "Select a time zone first.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先选择一个时区。"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在访达中显示"
+          }
+        }
+      }
+    },
+    "System": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统"
+          }
+        }
+      }
+    },
+    "System (%@)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统（%@）"
+          }
+        }
+      }
+    },
+    "System time zone could not be resolved; cannot build a launch environment.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法确定系统时区，没法生成启动环境。"
+          }
+        }
+      }
+    },
+    "This Mac · %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这台 Mac · %@"
+          }
+        }
+      }
+    },
+    "This build has no update signing key.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个版本没有更新签名密钥。"
+          }
+        }
+      }
+    },
+    "Time zone unavailable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法确定时区"
+          }
+        }
+      }
+    },
+    "Turns on Claude Code's sandbox and denies reads of /etc/localtime and the global preferences. Sandboxed commands can then only reach allowed network domains.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Claude Code 的 sandbox，并禁止读取 /etc/localtime 和全局偏好设置。之后 sandbox 里的命令只能访问允许列表里的网络域名。"
+          }
+        }
+      }
+    },
+    "Unknown": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知"
+          }
+        }
+      }
+    },
+    "Unknown zone": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知时区"
+          }
+        }
+      }
+    },
+    "Use System": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用系统时区"
+          }
+        }
+      }
+    },
+    "Using the system time zone": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在使用系统时区"
+          }
+        }
+      }
+    },
+    "World map showing day and night, with the Mac and Claude time zones marked": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示昼夜分布的世界地图，标出了 Mac 和 Claude 的时区"
+          }
+        }
+      }
+    },
+    "an unknown time zone": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知时区"
+          }
+        }
+      }
+    },
+    "the system time zone": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统时区"
+          }
+        }
+      }
+    },
+    "unknown": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

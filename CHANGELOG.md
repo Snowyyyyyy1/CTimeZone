@@ -2,6 +2,20 @@
 
 每个版本的说明会原样出现在 GitHub Release 和应用内的更新提示里。发版前必须先在这里写好对应版本的条目，否则发布流程会停下。
 
+## 0.3.0 — 2026-10-11
+
+### 新增
+
+- **隐藏 Mac 时区**：Claude Code 那一行下面新增一个开关。打开后，CTimeZone 会打开 Claude Code 自带的 sandbox，并禁止读取 `/etc/localtime` 和全局偏好设置，Claude Code 用 `readlink /etc/localtime`、`defaults read` 或自带的读文件工具都查不到 Mac 的真实时区。
+- 关掉开关只删除 CTimeZone 加的规则。sandbox 如果是 CTimeZone 打开的，也会一并关掉；你原来就开着的保持不变。修改前同样会备份 `settings.json`。
+- **简体中文界面**：界面跟随系统语言，支持简体中文和英文，Dock 启动器的提示框也一样。
+
+### 说明
+
+- 打开 sandbox 后，Claude Code 执行的命令只能访问允许列表里的网络域名，其他域名会被拦下或询问。
+- Claude 可以申请在 sandbox 外重新执行命令，同意后它仍可能查到时区；auto mode 下可能不经询问就自动同意。开关打开时，下方会一直显示这条提醒。
+- 语言和地区设置、出口 IP 仍然能看出你在哪里。
+
 ## 0.2.0 — 2026-10-10
 
 ### 新增

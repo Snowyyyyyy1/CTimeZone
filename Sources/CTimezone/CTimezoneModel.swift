@@ -19,6 +19,8 @@ final class CTimezoneModel {
     var banner: Banner?
 
     private(set) var cliConfiguredTZ: String?
+    /// Whether Claude Code's sandbox blocks reading the Mac's time zone.
+    private(set) var shieldIsOn = false
     private(set) var systemZone: SystemTimeZoneInfo
     private(set) var desktopMode: DesktopMode
     private(set) var desktopStatus: ClaudeDesktopController.Status
@@ -33,6 +35,9 @@ final class CTimezoneModel {
     private let defaults: UserDefaults
     private let launcher = LauncherInstaller.embeddedTemplate().map { LauncherInstaller(templateURL: $0) }
     private static let launcherPathKey = "launcherPath"
+    /// Set when turning the shield on also turned the sandbox on, so turning
+    /// it off restores the user's sandbox choice.
+    private static let shieldEnabledSandboxKey = "shieldEnabledSandbox"
 
     init(
         store: ClaudeSettingsStore = ClaudeSettingsStore(),
@@ -49,6 +54,7 @@ final class CTimezoneModel {
         let configured = try? store.currentTimeZone()
         self.cliConfiguredTZ = configured ?? nil
         self.selectedTimeZone = configured ?? nil
+        self.shieldIsOn = (try? store.isTimeZoneShieldOn()) ?? false
         self.desktopMode = DesktopModePreference.load(defaults, configuredTZ: configured ?? nil)
         self.desktopStatus = desktop.status()
         self.launcherURL = defaults.string(forKey: Self.launcherPathKey)
@@ -92,7 +98,7 @@ final class CTimezoneModel {
 
     var desktopModeLabel: String {
         switch desktopMode {
-        case .system: return "System (\(systemZone.identifier ?? "unknown"))"
+        case .system: return String(localized: "System (\(systemZone.identifier ?? String(localized: "unknown")))")
         case .fixed(let tz): return tz
         }
     }
@@ -102,6 +108,7 @@ final class CTimezoneModel {
         // Keep the last known value only when the file is unreadable; an absent
         // key must clear it so external removals show up.
         do { cliConfiguredTZ = try store.currentTimeZone() } catch {}
+        do { shieldIsOn = try store.isTimeZoneShieldOn() } catch {}
         desktopStatus = desktop.status()
     }
 
@@ -109,11 +116,11 @@ final class CTimezoneModel {
     /// Does not touch the running Desktop process.
     func apply() async {
         guard let target = selectedTimeZone else {
-            banner = Banner(kind: .error, text: "Select a time zone first.")
+            banner = Banner(kind: .error, text: String(localized: "Select a time zone first."))
             return
         }
         guard Timezones.isValid(target) else {
-            banner = Banner(kind: .error, text: "Not a valid IANA time zone: \(target)")
+            banner = Banner(kind: .error, text: String(localized: "Not a valid IANA time zone: \(target)"))
             return
         }
         isBusy = true
@@ -124,10 +131,10 @@ final class CTimezoneModel {
             setDesktopMode(.fixed(target))
             banner = Banner(
                 kind: .info,
-                text: "Saved env.TZ=\(target) for Claude Code and URL Handler. Restart those sessions to apply."
+                text: String(localized: "Saved env.TZ=\(target) for Claude Code and URL Handler. Restart those sessions to apply.")
             )
         } catch {
-            banner = Banner(kind: .error, text: "Could not update settings.json: \(error)")
+            banner = Banner(kind: .error, text: String(localized: "Could not update settings.json: \(String(describing: error))"))
         }
     }
 
@@ -142,10 +149,34 @@ final class CTimezoneModel {
             setDesktopMode(.system)
             banner = Banner(
                 kind: .info,
-                text: "Removed env.TZ. Claude Code / URL Handler will use the system time zone after restart."
+                text: String(localized: "Removed env.TZ. Claude Code / URL Handler will use the system time zone after restart.")
             )
         } catch {
-            banner = Banner(kind: .error, text: "Could not update settings.json: \(error)")
+            banner = Banner(kind: .error, text: String(localized: "Could not update settings.json: \(String(describing: error))"))
+        }
+    }
+
+    /// Adds or removes the sandbox rules that hide the Mac's time zone from
+    /// Claude Code's commands and file tools.
+    func setShield(_ on: Bool) {
+        do {
+            if on {
+                let result = try store.enableTimeZoneShield()
+                if result.enabledSandbox {
+                    defaults.set(true, forKey: Self.shieldEnabledSandboxKey)
+                }
+                banner = Banner(
+                    kind: .info,
+                    text: String(localized: "Claude Code's sandbox now blocks reading the Mac's time zone. Restart sessions to apply.")
+                )
+            } else {
+                try store.disableTimeZoneShield(disableSandbox: defaults.bool(forKey: Self.shieldEnabledSandboxKey))
+                defaults.removeObject(forKey: Self.shieldEnabledSandboxKey)
+                banner = Banner(kind: .info, text: String(localized: "Removed the sandbox rules that hide the Mac's time zone."))
+            }
+            shieldIsOn = on
+        } catch {
+            banner = Banner(kind: .error, text: String(localized: "Could not update settings.json: \(String(describing: error))"))
         }
     }
 
@@ -154,7 +185,7 @@ final class CTimezoneModel {
         guard let target = desktopTargetIdentifier else {
             banner = Banner(
                 kind: .error,
-                text: "System time zone could not be resolved; cannot build a launch environment."
+                text: String(localized: "System time zone could not be resolved; cannot build a launch environment.")
             )
             return
         }
@@ -165,15 +196,15 @@ final class CTimezoneModel {
         }
         switch outcome {
         case .activated:
-            banner = Banner(kind: .info, text: "Claude Desktop already runs with TZ=\(target); brought to front.")
+            banner = Banner(kind: .info, text: String(localized: "Claude Desktop already runs with TZ=\(target); brought to front."))
         case .launched:
-            banner = Banner(kind: .info, text: "Launched Claude Desktop with TZ=\(target).")
+            banner = Banner(kind: .info, text: String(localized: "Launched Claude Desktop with TZ=\(target)."))
         case .cancelled:
             banner = nil
         case .relaunched:
-            banner = Banner(kind: .info, text: "Relaunched Claude Desktop with TZ=\(target).")
+            banner = Banner(kind: .info, text: String(localized: "Relaunched Claude Desktop with TZ=\(target)."))
         case .failed(let message):
-            banner = Banner(kind: .error, text: "Launch failed: \(message)")
+            banner = Banner(kind: .error, text: String(localized: "Launch failed: \(message)"))
         }
         desktopStatus = desktop.status()
     }
@@ -191,13 +222,12 @@ final class CTimezoneModel {
     private static func confirmTerminate(target: String) async -> Bool {
         await withCheckedContinuation { continuation in
             let alert = NSAlert()
-            alert.messageText = "Relaunch Claude Desktop?"
-            alert.informativeText =
-                "Claude Desktop is running with a different or unknown time zone. "
-                + "CTimeZone will ask it to quit gracefully, then relaunch it with TZ=\(target). "
-                + "Unsaved work in Claude may be affected."
-            alert.addButton(withTitle: "Relaunch")
-            alert.addButton(withTitle: "Cancel")
+            alert.messageText = String(localized: "Relaunch Claude Desktop?")
+            alert.informativeText = String(
+                localized: "Claude Desktop is running with a different or unknown time zone. CTimeZone will ask it to quit gracefully, then relaunch it with TZ=\(target). Unsaved work in Claude may be affected."
+            )
+            alert.addButton(withTitle: String(localized: "Relaunch"))
+            alert.addButton(withTitle: String(localized: "Cancel"))
             alert.alertStyle = .warning
             continuation.resume(returning: alert.runModal() == .alertFirstButtonReturn)
         }
@@ -217,11 +247,11 @@ final class CTimezoneModel {
             let url = try await writeLauncher()
             banner = Banner(
                 kind: .info,
-                text: "Drag \u{201C}\(launcherName)\u{201D} from Finder to the Dock. Spotlight and Raycast find it too."
+                text: String(localized: "Drag \u{201C}\(launcherName)\u{201D} from Finder to the Dock. Spotlight and Raycast find it too.")
             )
             NSWorkspace.shared.activateFileViewerSelecting([url])
         } catch {
-            banner = Banner(kind: .error, text: "Could not create the launcher: \(error.localizedDescription)")
+            banner = Banner(kind: .error, text: String(localized: "Could not create the launcher: \(error.localizedDescription)"))
         }
     }
 
@@ -231,9 +261,9 @@ final class CTimezoneModel {
             try launcher.remove(url)
             launcherURL = nil
             defaults.removeObject(forKey: Self.launcherPathKey)
-            banner = Banner(kind: .info, text: "Moved the launcher to the Trash.")
+            banner = Banner(kind: .info, text: String(localized: "Moved the launcher to the Trash."))
         } catch {
-            banner = Banner(kind: .error, text: "Could not remove the launcher: \(error.localizedDescription)")
+            banner = Banner(kind: .error, text: String(localized: "Could not remove the launcher: \(error.localizedDescription)"))
         }
     }
 

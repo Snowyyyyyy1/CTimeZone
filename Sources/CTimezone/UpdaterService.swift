@@ -26,9 +26,9 @@ final class UpdaterService: ObservableObject {
         var reason: String? {
             switch self {
             case .available: nil
-            case .buildProducts: "Development builds do not update themselves."
-            case .notInstalled: "Move CTimeZone to Applications to enable updates."
-            case .missingPublicKey: "This build has no update signing key."
+            case .buildProducts: String(localized: "Development builds do not update themselves.")
+            case .notInstalled: String(localized: "Move CTimeZone to Applications to enable updates.")
+            case .missingPublicKey: String(localized: "This build has no update signing key.")
             }
         }
     }

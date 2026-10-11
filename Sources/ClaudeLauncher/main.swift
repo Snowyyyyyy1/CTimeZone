@@ -17,11 +17,17 @@ enum Launcher {
         let mode = DesktopModePreference.load(defaults, configuredTZ: configured)
 
         guard FileManager.default.fileExists(atPath: ClaudeDesktopController.appPath) else {
-            showError("Claude is not installed", "Install Claude Desktop in /Applications, then try again.")
+            showError(
+                String(localized: "Claude is not installed"),
+                String(localized: "Install Claude Desktop in /Applications, then try again.")
+            )
             return
         }
         guard let target = mode.identifier ?? SystemTimeZoneResolver.resolve().identifier else {
-            showError("Time zone unavailable", "Open CTimeZone and choose a time zone for Claude.")
+            showError(
+                String(localized: "Time zone unavailable"),
+                String(localized: "Open CTimeZone and choose a time zone for Claude.")
+            )
             return
         }
 
@@ -37,24 +43,26 @@ enum Launcher {
             // "Just Open": the user still wants Claude, only without a restart.
             controller.activateRunning()
         case .failed(let message):
-            showError("Could not open Claude", message)
+            showError(String(localized: "Could not open Claude"), message)
         }
     }
 
     private static func describe(_ observed: ProcessTZProbe.Result) -> String {
         switch observed {
         case .value(let zone): return zone
-        case .absent: return "the system time zone"
-        case .unavailable: return "an unknown time zone"
+        case .absent: return String(localized: "the system time zone")
+        case .unavailable: return String(localized: "an unknown time zone")
         }
     }
 
     private static func confirmRelaunch(current: String, target: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "Claude is running in \(current)"
-        alert.informativeText = "Relaunch it in \(target)? Claude quits normally first; unsaved work in Claude may be affected."
-        alert.addButton(withTitle: "Relaunch")
-        alert.addButton(withTitle: "Just Open")
+        alert.messageText = String(localized: "Claude is running in \(current)")
+        alert.informativeText = String(
+            localized: "Relaunch it in \(target)? Claude quits normally first; unsaved work in Claude may be affected."
+        )
+        alert.addButton(withTitle: String(localized: "Relaunch"))
+        alert.addButton(withTitle: String(localized: "Just Open"))
         // A windowless app must come forward or the alert opens behind everything.
         NSApp.activate()
         return alert.runModal() == .alertFirstButtonReturn

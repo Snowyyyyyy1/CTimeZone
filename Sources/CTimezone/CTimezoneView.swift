@@ -73,6 +73,31 @@ struct CTimezoneView: View {
                     .accessibilityIdentifier("ctz.applyButton")
                 }
 
+                targetRow(title: "Hide Mac Time Zone") {
+                    if model.shieldIsOn {
+                        Text("Claude Code's sandbox blocks reading it")
+                        Label(
+                            "If Claude asks to rerun a command outside the sandbox, approving it can reveal the zone. Auto mode may approve it without asking.",
+                            systemImage: "exclamationmark.triangle"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text("Off \u{00B7} Claude Code can look it up")
+                    }
+                } actions: {
+                    Toggle("Hide Mac Time Zone", isOn: Binding(
+                        get: { model.shieldIsOn },
+                        set: { model.setShield($0) }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(model.isBusy)
+                    .help("Turns on Claude Code's sandbox and denies reads of /etc/localtime and the global preferences. Sandboxed commands can then only reach allowed network domains.")
+                    .accessibilityIdentifier("ctz.shieldToggle")
+                }
+
                 targetRow(title: "Claude Desktop") {
                     desktopDetail
                 } actions: {
@@ -140,7 +165,7 @@ struct CTimezoneView: View {
     }
 
     private func targetRow<Detail: View, Actions: View>(
-        title: String,
+        title: LocalizedStringKey,
         @ViewBuilder detail: () -> Detail,
         @ViewBuilder actions: () -> Actions
     ) -> some View {
@@ -160,10 +185,17 @@ struct CTimezoneView: View {
     @ViewBuilder
     private var codeDetail: some View {
         if model.hasUnappliedSelection, let pending = model.selectedTimeZone {
-            Text("\(model.cliConfiguredTZ ?? "System") \u{2192} ") + Text(pending).foregroundStyle(Color.accentColor)
+            Text(verbatim: "\(model.cliConfiguredTZ ?? String(localized: "System")) \u{2192} ")
+                + Text(pending).foregroundStyle(Color.accentColor)
         } else {
-            Text(model.cliConfiguredTZ ?? "Using the system time zone")
-                .accessibilityIdentifier("ctz.configuredValue")
+            Group {
+                if let tz = model.cliConfiguredTZ {
+                    Text(tz)
+                } else {
+                    Text("Using the system time zone")
+                }
+            }
+            .accessibilityIdentifier("ctz.configuredValue")
         }
     }
 
@@ -180,20 +212,20 @@ struct CTimezoneView: View {
 
     private var systemZoneDetail: String {
         switch model.systemZone.source {
-        case .systemLink: return "System"
-        case .processFallback: return "Process fallback"
-        case .unknown: return "Unknown"
+        case .systemLink: return String(localized: "System")
+        case .processFallback: return String(localized: "Process fallback")
+        case .unknown: return String(localized: "Unknown")
         }
     }
 
     private var desktopStatusText: String {
         let target = model.desktopModeLabel
-        guard model.desktopStatus.isRunning else { return "Not running \u{00B7} opens in \(target)" }
-        if model.desktopIsInSync { return "Running in \(target)" }
+        guard model.desktopStatus.isRunning else { return String(localized: "Not running \u{00B7} opens in \(target)") }
+        if model.desktopIsInSync { return String(localized: "Running in \(target)") }
         switch model.desktopStatus.observedTZ {
-        case .value(let tz): return "Running in \(tz) \u{00B7} relaunch for \(target)"
-        case .absent: return "Running in system zone \u{00B7} relaunch for \(target)"
-        case .unavailable: return "Running, zone unreadable \u{00B7} target \(target)"
+        case .value(let tz): return String(localized: "Running in \(tz) \u{00B7} relaunch for \(target)")
+        case .absent: return String(localized: "Running in system zone \u{00B7} relaunch for \(target)")
+        case .unavailable: return String(localized: "Running, zone unreadable \u{00B7} target \(target)")
         }
     }
 
@@ -271,7 +303,7 @@ private struct ClockComparison: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             HStack(alignment: .center, spacing: 0) {
                 ClockFace(
-                    caption: "This Mac · \(systemSource)",
+                    caption: String(localized: "This Mac \u{00B7} \(systemSource)"),
                     zone: systemZone,
                     date: context.date,
                     emphasized: false
@@ -282,7 +314,7 @@ private struct ClockComparison: View {
                     .padding(.horizontal, 12)
 
                 ClockFace(
-                    caption: isPreview ? "Claude · preview" : "Claude",
+                    caption: isPreview ? String(localized: "Claude \u{00B7} preview") : "Claude",
                     zone: claudeZone,
                     date: context.date,
                     emphasized: true
@@ -373,7 +405,7 @@ private enum GMTOffset {
 
     /// "+6h", "−2:30h", "Same time".
     static func delta(_ seconds: Int) -> String {
-        seconds == 0 ? "Same time" : signed(seconds) + "h"
+        seconds == 0 ? String(localized: "Same time") : signed(seconds) + "h"
     }
 
     private static func signed(_ seconds: Int) -> String {

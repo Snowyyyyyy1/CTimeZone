@@ -1,8 +1,8 @@
 import Foundation
 
 /// Reads and writes `env.TZ` in `~/.claude/settings.json` while preserving
-/// every unrelated value. Only the `TZ` key inside the top-level `env` object
-/// is ever touched; all other keys (and the rest of the file) are retained.
+/// every unrelated value. Besides `env.TZ`, it only touches the entries the
+/// time zone shield owns (see `shieldReadPaths`); all other keys are retained.
 public struct ClaudeSettingsStore {
     public enum StoreError: Error, Equatable {
         /// The file exists but is not a JSON object at the root.
@@ -11,6 +11,24 @@ public struct ClaudeSettingsStore {
         case malformedEnv
         /// A time zone identifier failed validation.
         case invalidTimeZone(String)
+        /// `sandbox`, `sandbox.filesystem` or `denyRead` has an unexpected type.
+        case malformedSandbox
+        /// `permissions` or `permissions.deny` has an unexpected type.
+        case malformedPermissions
+    }
+
+    /// Files that reveal the Mac's own time zone. `/etc/localtime` names the
+    /// zone through its link target; the global preferences hold the selected city.
+    public static let shieldReadPaths = [
+        "/etc/localtime",
+        "/private/etc/localtime",
+        "/Library/Preferences/.GlobalPreferences.plist",
+    ]
+
+    /// Read deny rules for Claude's own file tools, which run outside the
+    /// sandbox. Permission rules mark absolute paths with a leading `//`.
+    public static var shieldReadRules: [String] {
+        shieldReadPaths.map { "Read(/\($0))" }
     }
 
     public let settingsURL: URL
@@ -34,14 +52,7 @@ public struct ClaudeSettingsStore {
     /// Throws when the file is present but malformed, so callers never
     /// overwrite a structure they failed to understand.
     public func currentTimeZone() throws -> String? {
-        guard fileManager.fileExists(atPath: settingsURL.path) else { return nil }
-        let data = try Data(contentsOf: settingsURL)
-        guard !data.isEmpty else { return nil }
-        let root = try JSONSerialization.jsonObject(with: data)
-        guard let dict = root as? [String: Any] else { throw StoreError.malformedRoot }
-        guard let envAny = dict["env"] else { return nil }
-        guard let env = envAny as? [String: Any] else { throw StoreError.malformedEnv }
-        return env["TZ"] as? String
+        try Self.dictionary(readRoot()["env"], or: .malformedEnv)["TZ"] as? String
     }
 
     /// Sets `env.TZ` to `identifier`, creating the file and/or `env` object when
@@ -61,37 +72,123 @@ public struct ClaudeSettingsStore {
         try mutateEnv { env in env.removeValue(forKey: "TZ") }
     }
 
+    // MARK: - Time zone shield
+
+    /// True when the sandbox is on and every shield entry is present, so
+    /// Claude Code's commands and file tools cannot read the Mac's time zone.
+    public func isTimeZoneShieldOn() throws -> Bool {
+        let parts = try ShieldParts(try readRoot())
+        return parts.sandbox["enabled"] as? Bool == true
+            && Set(Self.shieldReadPaths).isSubset(of: parts.denyRead)
+            && Set(Self.shieldReadRules).isSubset(of: parts.deny)
+    }
+
+    /// Turns the sandbox on and adds the shield's read denials to
+    /// `sandbox.filesystem.denyRead` and `permissions.deny`.
+    /// `enabledSandbox` is true when the sandbox was off before, so the caller
+    /// can turn it back off when the shield is removed.
+    public func enableTimeZoneShield() throws -> (backup: URL?, enabledSandbox: Bool) {
+        var enabledSandbox = false
+        let backup = try mutateRoot { root in
+            var parts = try ShieldParts(root)
+            enabledSandbox = parts.sandbox["enabled"] as? Bool != true
+            parts.sandbox["enabled"] = true
+            parts.denyRead += Self.shieldReadPaths.filter { !parts.denyRead.contains($0) }
+            parts.deny += Self.shieldReadRules.filter { !parts.deny.contains($0) }
+            parts.write(into: &root)
+        }
+        return (backup, enabledSandbox)
+    }
+
+    /// Removes only the shield's entries, dropping containers they leave
+    /// empty. Turns the sandbox off only when `disableSandbox` is true.
+    @discardableResult
+    public func disableTimeZoneShield(disableSandbox: Bool) throws -> URL? {
+        try mutateRoot { root in
+            var parts = try ShieldParts(root)
+            parts.denyRead.removeAll { Self.shieldReadPaths.contains($0) }
+            parts.deny.removeAll { Self.shieldReadRules.contains($0) }
+            if disableSandbox { parts.sandbox.removeValue(forKey: "enabled") }
+            parts.write(into: &root)
+        }
+    }
+
+    /// The containers the shield edits, read once and written back together.
+    /// Writing drops any container left empty.
+    private struct ShieldParts {
+        var sandbox: [String: Any]
+        var filesystem: [String: Any]
+        var permissions: [String: Any]
+        var denyRead: [String]
+        var deny: [String]
+
+        init(_ root: [String: Any]) throws {
+            sandbox = try ClaudeSettingsStore.dictionary(root["sandbox"], or: .malformedSandbox)
+            filesystem = try ClaudeSettingsStore.dictionary(sandbox["filesystem"], or: .malformedSandbox)
+            permissions = try ClaudeSettingsStore.dictionary(root["permissions"], or: .malformedPermissions)
+            denyRead = try ClaudeSettingsStore.strings(filesystem["denyRead"], or: .malformedSandbox)
+            deny = try ClaudeSettingsStore.strings(permissions["deny"], or: .malformedPermissions)
+        }
+
+        func write(into root: inout [String: Any]) {
+            var filesystem = filesystem, sandbox = sandbox, permissions = permissions
+            filesystem["denyRead"] = denyRead.isEmpty ? nil : denyRead
+            sandbox["filesystem"] = filesystem.isEmpty ? nil : filesystem
+            permissions["deny"] = deny.isEmpty ? nil : deny
+            root["sandbox"] = sandbox.isEmpty ? nil : sandbox
+            root["permissions"] = permissions.isEmpty ? nil : permissions
+        }
+    }
+
     // MARK: - Internals
 
-    private func mutateEnv(_ body: (inout [String: Any]) -> Void) throws -> URL? {
-        var root: [String: Any] = [:]
-        let fileExists = fileManager.fileExists(atPath: settingsURL.path)
+    private func readRoot() throws -> [String: Any] {
+        guard fileManager.fileExists(atPath: settingsURL.path) else { return [:] }
+        let data = try Data(contentsOf: settingsURL)
+        guard !data.isEmpty else { return [:] }
+        let parsed = try JSONSerialization.jsonObject(with: data)
+        guard let dict = parsed as? [String: Any] else { throw StoreError.malformedRoot }
+        return dict
+    }
 
-        if fileExists {
-            let data = try Data(contentsOf: settingsURL)
-            if !data.isEmpty {
-                let parsed = try JSONSerialization.jsonObject(with: data)
-                guard let dict = parsed as? [String: Any] else { throw StoreError.malformedRoot }
-                root = dict
+    /// An absent value reads as empty; any other non-object type throws.
+    private static func dictionary(_ value: Any?, or error: StoreError) throws -> [String: Any] {
+        guard let value else { return [:] }
+        guard let dict = value as? [String: Any] else { throw error }
+        return dict
+    }
+
+    private static func strings(_ value: Any?, or error: StoreError) throws -> [String] {
+        guard let value else { return [] }
+        guard let array = value as? [String] else { throw error }
+        return array
+    }
+
+    private func mutateEnv(_ body: (inout [String: Any]) -> Void) throws -> URL? {
+        try mutateRoot { root in
+            var env = try Self.dictionary(root["env"], or: .malformedEnv)
+            let before = env
+            body(&env)
+            // Leave the root untouched when env is unchanged, so removing TZ
+            // from a file without one never adds an empty `env` object.
+            if before as NSDictionary != env as NSDictionary {
+                root["env"] = env
             }
         }
+    }
 
-        var env: [String: Any] = [:]
-        if let envAny = root["env"] {
-            guard let existing = envAny as? [String: Any] else { throw StoreError.malformedEnv }
-            env = existing
-        }
+    private func mutateRoot(_ body: (inout [String: Any]) throws -> Void) throws -> URL? {
+        let fileExists = fileManager.fileExists(atPath: settingsURL.path)
+        var root = try readRoot()
 
-        let before = env
-        body(&env)
-        // No-op when the env mapping is unchanged. This must not depend on
-        // `fileExists`: removing TZ from a missing/empty file changes nothing
-        // and must not create the file or an empty `env` object.
-        if before as NSDictionary == env as NSDictionary {
+        let before = root
+        try body(&root)
+        // No-op when nothing changed. This must not depend on `fileExists`:
+        // a no-op on a missing/empty file must not create the file.
+        if before as NSDictionary == root as NSDictionary {
             return nil
         }
 
-        root["env"] = env
         let output = try JSONSerialization.data(
             withJSONObject: root,
             options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
