@@ -2,7 +2,8 @@ import Foundation
 
 /// Reads and writes `env.TZ` in `~/.claude/settings.json` while preserving
 /// every unrelated value. Besides `env.TZ`, it only touches the entries the
-/// time zone shield owns (see `shieldReadPaths`); all other keys are retained.
+/// time zone shield owns (see `shieldReadPaths` and `ShieldAdditions`); all
+/// other keys are retained.
 public struct ClaudeSettingsStore {
     public enum StoreError: Error, Equatable {
         /// The file exists but is not a JSON object at the root.
@@ -11,9 +12,10 @@ public struct ClaudeSettingsStore {
         case malformedEnv
         /// A time zone identifier failed validation.
         case invalidTimeZone(String)
-        /// `sandbox`, `sandbox.filesystem` or `denyRead` has an unexpected type.
+        /// `sandbox`, `sandbox.filesystem`, `sandbox.network`, `denyRead` or
+        /// `allowWrite` has an unexpected type.
         case malformedSandbox
-        /// `permissions` or `permissions.deny` has an unexpected type.
+        /// `permissions`, `permissions.allow` or `permissions.deny` has an unexpected type.
         case malformedPermissions
     }
 
@@ -29,6 +31,36 @@ public struct ClaudeSettingsStore {
     /// sandbox. Permission rules mark absolute paths with a leading `//`.
     public static var shieldReadRules: [String] {
         shieldReadPaths.map { "Read(/\($0))" }
+    }
+
+    /// Allow rule whose domain the sandbox also pre-allows. `sandbox.network.allowedDomains`
+    /// rejects a bare `*`, but a `WebFetch(domain:*)` allow rule matches every host.
+    public static let allowAllDomainsRule = "WebFetch(domain:*)"
+
+    /// `sandbox.filesystem.allowWrite` entry that lets sandboxed commands
+    /// write anywhere outside Claude Code's protected paths.
+    public static let allowWriteEverywhere = "/"
+
+    /// `sandbox.network` switches that lift the sandbox's socket limits.
+    /// `allowAppleEvents` and `allowMachLookup` stay off: both let a command
+    /// reach code outside the sandbox, which could read the time zone.
+    public static let openNetworkKeys = ["allowLocalBinding", "allowAllUnixSockets"]
+
+    /// What turning the shield on added besides its read denials, so turning
+    /// it off removes only those.
+    public struct ShieldAdditions: Equatable {
+        /// `sandbox.enabled` was not true before.
+        public var enabledSandbox = false
+        /// `allowWriteEverywhere` and `openNetworkKeys` were added.
+        public var openedSandbox = false
+        /// `allowAllDomainsRule` was added to `permissions.allow`.
+        public var allowedAllDomains = false
+
+        public init(enabledSandbox: Bool = false, openedSandbox: Bool = false, allowedAllDomains: Bool = false) {
+            self.enabledSandbox = enabledSandbox
+            self.openedSandbox = openedSandbox
+            self.allowedAllDomains = allowedAllDomains
+        }
     }
 
     public let settingsURL: URL
@@ -85,30 +117,46 @@ public struct ClaudeSettingsStore {
 
     /// Turns the sandbox on and adds the shield's read denials to
     /// `sandbox.filesystem.denyRead` and `permissions.deny`.
-    /// `enabledSandbox` is true when the sandbox was off before, so the caller
-    /// can turn it back off when the shield is removed.
-    public func enableTimeZoneShield() throws -> (backup: URL?, enabledSandbox: Bool) {
-        var enabledSandbox = false
+    /// When the sandbox was off and holds no settings of the user's own, it
+    /// also opens writes, sockets and every domain, so the shield blocks
+    /// little beyond the time zone reads. The caller keeps `added` to undo
+    /// exactly these.
+    public func enableTimeZoneShield() throws -> (backup: URL?, added: ShieldAdditions) {
+        var added = ShieldAdditions()
         let backup = try mutateRoot { root in
             var parts = try ShieldParts(root)
-            enabledSandbox = parts.sandbox["enabled"] as? Bool != true
+            added.enabledSandbox = parts.sandbox["enabled"] as? Bool != true
+            if added.enabledSandbox && parts.sandbox.keys.allSatisfy({ $0 == "enabled" }) {
+                parts.allowWrite = [Self.allowWriteEverywhere]
+                for key in Self.openNetworkKeys { parts.network[key] = true }
+                added.openedSandbox = true
+                if !parts.allow.contains(Self.allowAllDomainsRule) {
+                    parts.allow.append(Self.allowAllDomainsRule)
+                    added.allowedAllDomains = true
+                }
+            }
             parts.sandbox["enabled"] = true
             parts.denyRead += Self.shieldReadPaths.filter { !parts.denyRead.contains($0) }
             parts.deny += Self.shieldReadRules.filter { !parts.deny.contains($0) }
             parts.write(into: &root)
         }
-        return (backup, enabledSandbox)
+        return (backup, added)
     }
 
-    /// Removes only the shield's entries, dropping containers they leave
-    /// empty. Turns the sandbox off only when `disableSandbox` is true.
+    /// Removes the shield's read denials and whatever `added` records,
+    /// dropping containers they leave empty.
     @discardableResult
-    public func disableTimeZoneShield(disableSandbox: Bool) throws -> URL? {
+    public func disableTimeZoneShield(undoing added: ShieldAdditions) throws -> URL? {
         try mutateRoot { root in
             var parts = try ShieldParts(root)
             parts.denyRead.removeAll { Self.shieldReadPaths.contains($0) }
             parts.deny.removeAll { Self.shieldReadRules.contains($0) }
-            if disableSandbox { parts.sandbox.removeValue(forKey: "enabled") }
+            if added.enabledSandbox { parts.sandbox.removeValue(forKey: "enabled") }
+            if added.openedSandbox {
+                for key in Self.openNetworkKeys { parts.network.removeValue(forKey: key) }
+                parts.allowWrite.removeAll { $0 == Self.allowWriteEverywhere }
+            }
+            if added.allowedAllDomains { parts.allow.removeAll { $0 == Self.allowAllDomainsRule } }
             parts.write(into: &root)
         }
     }
@@ -118,22 +166,31 @@ public struct ClaudeSettingsStore {
     private struct ShieldParts {
         var sandbox: [String: Any]
         var filesystem: [String: Any]
+        var network: [String: Any]
         var permissions: [String: Any]
         var denyRead: [String]
+        var allowWrite: [String]
+        var allow: [String]
         var deny: [String]
 
         init(_ root: [String: Any]) throws {
             sandbox = try ClaudeSettingsStore.dictionary(root["sandbox"], or: .malformedSandbox)
             filesystem = try ClaudeSettingsStore.dictionary(sandbox["filesystem"], or: .malformedSandbox)
+            network = try ClaudeSettingsStore.dictionary(sandbox["network"], or: .malformedSandbox)
             permissions = try ClaudeSettingsStore.dictionary(root["permissions"], or: .malformedPermissions)
             denyRead = try ClaudeSettingsStore.strings(filesystem["denyRead"], or: .malformedSandbox)
+            allowWrite = try ClaudeSettingsStore.strings(filesystem["allowWrite"], or: .malformedSandbox)
+            allow = try ClaudeSettingsStore.strings(permissions["allow"], or: .malformedPermissions)
             deny = try ClaudeSettingsStore.strings(permissions["deny"], or: .malformedPermissions)
         }
 
         func write(into root: inout [String: Any]) {
             var filesystem = filesystem, sandbox = sandbox, permissions = permissions
             filesystem["denyRead"] = denyRead.isEmpty ? nil : denyRead
+            filesystem["allowWrite"] = allowWrite.isEmpty ? nil : allowWrite
             sandbox["filesystem"] = filesystem.isEmpty ? nil : filesystem
+            sandbox["network"] = network.isEmpty ? nil : network
+            permissions["allow"] = allow.isEmpty ? nil : allow
             permissions["deny"] = deny.isEmpty ? nil : deny
             root["sandbox"] = sandbox.isEmpty ? nil : sandbox
             root["permissions"] = permissions.isEmpty ? nil : permissions

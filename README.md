@@ -68,11 +68,23 @@
 - 在 `sandbox.filesystem.denyRead` 里禁止读取 `/etc/localtime`、`/private/etc/localtime` 和 `/Library/Preferences/.GlobalPreferences.plist`，上面两条命令都会失败；
 - 在 `permissions.deny` 里加上对应的 `Read(...)` 规则，Claude 自带的读文件工具也读不到。
 
-关掉开关只删除这些条目。如果 sandbox 是 CTimeZone 打开的，也会一并关掉；你自己原来开着的不动。
+如果 sandbox 原来是关的，`sandbox` 里也没有你自己的设置，CTimeZone 会把其他限制尽量放开，让 sandbox 基本只拦时区：
+
+- 在 `permissions.allow` 里加上 `WebFetch(domain:*)`。`allowedDomains` 不接受 `*`，但 sandbox 会把这条规则里的域名并入允许列表，于是所有域名都能访问；
+- 在 `sandbox.filesystem.allowWrite` 里加上 `/`，命令可以写任意位置；
+- 设置 `sandbox.network.allowLocalBinding` 和 `allowAllUnixSockets` 为 `true`，命令可以监听本地端口、连接 Unix socket。
+
+`allowAppleEvents` 和 `allowMachLookup` 不会打开：它们能让命令调用 sandbox 外的程序或系统服务，从而查到时区。
+
+你原来就开着 sandbox，或者 `sandbox` 里已经有自己的设置，CTimeZone 只加上面三条读取限制，其余保持原样。
+
+关掉开关只删除 CTimeZone 加的条目。sandbox 如果是 CTimeZone 打开的，也会一并关掉；你自己原来开着的不动。
 
 需要知道的局限：
 
-- 打开 sandbox 后，Claude Code 执行的命令只能访问允许列表里的网络域名，其他域名会被拦下或询问。
+- 网络放开后，Claude 自带的 WebFetch 访问任何网站也不再询问。保留你原有设置时，sandbox 里的命令只能访问允许列表里的域名，其他域名会被拦下或询问。
+- sandbox 里的命令默认不经询问直接执行（`autoAllowBashIfSandboxed`）。写入放开后，它们可以在任意位置写入或删除文件；只有 `~/.claude`、`.zshrc`、`.git/hooks` 等受 Claude Code 保护的路径始终不可写。
+- `open`、`osascript` 这类需要 Apple Events 的命令仍会被拦下。
 - 语言和地区设置、`system_profiler`、出口 IP 仍然能看出你在哪里。
 - `excludedCommands` 里的命令，以及经同意后脱离 sandbox 重试的命令，不受限制。auto mode 下这种重试可能不经询问就被自动同意，开关下方会一直显示这条提醒。
 

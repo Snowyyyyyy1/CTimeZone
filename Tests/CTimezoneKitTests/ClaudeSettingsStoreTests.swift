@@ -196,12 +196,58 @@ final class ClaudeSettingsStoreTests: XCTestCase {
     func testEnableShieldOnMissingFile() throws {
         let result = try store().enableTimeZoneShield()
         XCTAssertNil(result.backup)
-        XCTAssertTrue(result.enabledSandbox)
+        XCTAssertEqual(result.added, .init(enabledSandbox: true, openedSandbox: true, allowedAllDomains: true))
         XCTAssertTrue(try store().isTimeZoneShieldOn())
         let root = try readRoot()
         let sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
-        XCTAssertEqual((sandbox["filesystem"] as? [String: Any])?["denyRead"] as? [String], paths)
-        XCTAssertEqual((root["permissions"] as? [String: Any])?["deny"] as? [String], rules)
+        let filesystem = try XCTUnwrap(sandbox["filesystem"] as? [String: Any])
+        XCTAssertEqual(filesystem["denyRead"] as? [String], paths)
+        XCTAssertEqual(filesystem["allowWrite"] as? [String], ["/"])
+        XCTAssertEqual(sandbox["network"] as? NSDictionary, ["allowLocalBinding": true, "allowAllUnixSockets": true] as NSDictionary)
+        let permissions = try XCTUnwrap(root["permissions"] as? [String: Any])
+        XCTAssertEqual(permissions["allow"] as? [String], [ClaudeSettingsStore.allowAllDomainsRule])
+        XCTAssertEqual(permissions["deny"] as? [String], rules)
+    }
+
+    func testEnableShieldKeepsUserSandboxSettings() throws {
+        try write(#"{"sandbox":{"enabled":false,"network":{"allowedDomains":["github.com"]}}}"#)
+        let result = try store().enableTimeZoneShield()
+        XCTAssertEqual(result.added, .init(enabledSandbox: true))
+        let root = try readRoot()
+        let sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
+        XCTAssertEqual(sandbox["network"] as? NSDictionary, ["allowedDomains": ["github.com"]] as NSDictionary)
+        XCTAssertNil((sandbox["filesystem"] as? [String: Any])?["allowWrite"])
+        XCTAssertNil((root["permissions"] as? [String: Any])?["allow"])
+    }
+
+    func testEnableShieldOpensSandboxWhenOnlyDisabled() throws {
+        try write(#"{"sandbox":{"enabled":false}}"#)
+        let result = try store().enableTimeZoneShield()
+        XCTAssertEqual(result.added, .init(enabledSandbox: true, openedSandbox: true, allowedAllDomains: true))
+        try store().disableTimeZoneShield(undoing: result.added)
+        // `enabled: false` is the default, so restoring drops the key.
+        XCTAssertEqual(try readRoot() as NSDictionary, [:] as NSDictionary)
+    }
+
+    func testDisableShieldKeepsAllowWriteEntriesAddedLater() throws {
+        let result = try store().enableTimeZoneShield()
+        var root = try readRoot()
+        var sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
+        var filesystem = try XCTUnwrap(sandbox["filesystem"] as? [String: Any])
+        filesystem["allowWrite"] = ["/", "~/.kube"]
+        sandbox["filesystem"] = filesystem
+        root["sandbox"] = sandbox
+        try JSONSerialization.data(withJSONObject: root).write(to: settingsURL)
+        try store().disableTimeZoneShield(undoing: result.added)
+        XCTAssertEqual(try readRoot() as NSDictionary, ["sandbox": ["filesystem": ["allowWrite": ["~/.kube"]]]] as NSDictionary)
+    }
+
+    func testEnableShieldDoesNotDuplicateAllowAllRule() throws {
+        try write(#"{"permissions":{"allow":["WebFetch(domain:*)"]}}"#)
+        let result = try store().enableTimeZoneShield()
+        XCTAssertEqual(result.added, .init(enabledSandbox: true, openedSandbox: true))
+        try store().disableTimeZoneShield(undoing: result.added)
+        XCTAssertEqual(try readRoot() as NSDictionary, ["permissions": ["allow": ["WebFetch(domain:*)"]]] as NSDictionary)
     }
 
     func testEnableShieldMergesWithUserEntries() throws {
@@ -212,7 +258,7 @@ final class ClaudeSettingsStoreTests: XCTestCase {
         """#)
         let result = try store().enableTimeZoneShield()
         XCTAssertNotNil(result.backup)
-        XCTAssertFalse(result.enabledSandbox)
+        XCTAssertEqual(result.added, .init())
         let root = try readRoot()
         XCTAssertEqual((root["env"] as? [String: Any])?["TZ"] as? String, "Asia/Tokyo")
         let sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
@@ -230,7 +276,7 @@ final class ClaudeSettingsStoreTests: XCTestCase {
         _ = try store().enableTimeZoneShield()
         let again = try store().enableTimeZoneShield()
         XCTAssertNil(again.backup)
-        XCTAssertFalse(again.enabledSandbox)
+        XCTAssertEqual(again.added, .init())
     }
 
     func testShieldOffWhenSandboxDisabled() throws {
@@ -246,7 +292,7 @@ final class ClaudeSettingsStoreTests: XCTestCase {
     func testDisableShieldRestoresOriginalDocument() throws {
         try write(#"{"env":{"TZ":"Asia/Tokyo"}}"#)
         let result = try store().enableTimeZoneShield()
-        try store().disableTimeZoneShield(disableSandbox: result.enabledSandbox)
+        try store().disableTimeZoneShield(undoing: result.added)
         XCTAssertEqual(try readRoot() as NSDictionary, ["env": ["TZ": "Asia/Tokyo"]] as NSDictionary)
     }
 
@@ -255,7 +301,7 @@ final class ClaudeSettingsStoreTests: XCTestCase {
         {"sandbox":{"enabled":true,"filesystem":{"denyRead":["~/.ssh"]}},"permissions":{"deny":["Read(./.env)"]}}
         """#)
         let result = try store().enableTimeZoneShield()
-        try store().disableTimeZoneShield(disableSandbox: result.enabledSandbox)
+        try store().disableTimeZoneShield(undoing: result.added)
         let root = try readRoot()
         let sandbox = try XCTUnwrap(root["sandbox"] as? [String: Any])
         XCTAssertEqual(sandbox["enabled"] as? Bool, true)
@@ -264,7 +310,7 @@ final class ClaudeSettingsStoreTests: XCTestCase {
     }
 
     func testDisableShieldOnMissingFileDoesNotCreateFile() throws {
-        XCTAssertNil(try store().disableTimeZoneShield(disableSandbox: true))
+        XCTAssertNil(try store().disableTimeZoneShield(undoing: .init(enabledSandbox: true, openedSandbox: true, allowedAllDomains: true)))
         XCTAssertFalse(FileManager.default.fileExists(atPath: settingsURL.path))
     }
 

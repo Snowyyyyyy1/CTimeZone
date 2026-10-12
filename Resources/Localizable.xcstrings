@@ -807,12 +807,12 @@
         }
       }
     },
-    "Turns on Claude Code's sandbox and denies reads of /etc/localtime and the global preferences. Sandboxed commands can then only reach allowed network domains.": {
+    "Turns on Claude Code's sandbox and denies reads of /etc/localtime and the global preferences. If the sandbox was off with no settings of your own, it also allows writes anywhere, all network domains, Unix sockets and local ports; otherwise your sandbox settings stay as they are.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开 Claude Code 的 sandbox，并禁止读取 /etc/localtime 和全局偏好设置。之后 sandbox 里的命令只能访问允许列表里的网络域名。"
+            "value": "打开 Claude Code 的 sandbox，并禁止读取 /etc/localtime 和全局偏好设置。如果 sandbox 原来是关的，也没有你自己的设置，会一并放开写入、所有网络域名、Unix socket 和本地端口；否则保留你原有的 sandbox 设置。"
           }
         }
       }

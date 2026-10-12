@@ -37,9 +37,11 @@ final class CTimezoneModel {
     private let defaults: UserDefaults
     private let launcher = LauncherInstaller.embeddedTemplate().map { LauncherInstaller(templateURL: $0) }
     private static let launcherPathKey = "launcherPath"
-    /// Set when turning the shield on also turned the sandbox on, so turning
-    /// it off restores the user's sandbox choice.
+    /// What turning the shield on added besides its read denials, so turning
+    /// it off restores the user's own sandbox settings.
     private static let shieldEnabledSandboxKey = "shieldEnabledSandbox"
+    private static let shieldAllowedAllDomainsKey = "shieldAllowedAllDomains"
+    private static let shieldOpenedSandboxKey = "shieldOpenedSandbox"
 
     init(
         store: ClaudeSettingsStore = ClaudeSettingsStore(),
@@ -170,17 +172,23 @@ final class CTimezoneModel {
     func setShield(_ on: Bool) {
         do {
             if on {
-                let result = try store.enableTimeZoneShield()
-                if result.enabledSandbox {
-                    defaults.set(true, forKey: Self.shieldEnabledSandboxKey)
-                }
+                let added = try store.enableTimeZoneShield().added
+                if added.enabledSandbox { defaults.set(true, forKey: Self.shieldEnabledSandboxKey) }
+                if added.openedSandbox { defaults.set(true, forKey: Self.shieldOpenedSandboxKey) }
+                if added.allowedAllDomains { defaults.set(true, forKey: Self.shieldAllowedAllDomainsKey) }
                 banner = Banner(
                     kind: .info,
                     text: String(localized: "Claude Code's sandbox now blocks reading the Mac's time zone. Restart sessions to apply.")
                 )
             } else {
-                try store.disableTimeZoneShield(disableSandbox: defaults.bool(forKey: Self.shieldEnabledSandboxKey))
-                defaults.removeObject(forKey: Self.shieldEnabledSandboxKey)
+                try store.disableTimeZoneShield(undoing: ClaudeSettingsStore.ShieldAdditions(
+                    enabledSandbox: defaults.bool(forKey: Self.shieldEnabledSandboxKey),
+                    openedSandbox: defaults.bool(forKey: Self.shieldOpenedSandboxKey),
+                    allowedAllDomains: defaults.bool(forKey: Self.shieldAllowedAllDomainsKey)
+                ))
+                for key in [Self.shieldEnabledSandboxKey, Self.shieldOpenedSandboxKey, Self.shieldAllowedAllDomainsKey] {
+                    defaults.removeObject(forKey: key)
+                }
                 banner = Banner(kind: .info, text: String(localized: "Removed the sandbox rules that hide the Mac's time zone."))
             }
             shieldIsOn = on

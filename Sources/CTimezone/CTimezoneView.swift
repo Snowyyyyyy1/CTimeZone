@@ -94,7 +94,7 @@ struct CTimezoneView: View {
                     .toggleStyle(.switch)
                     .labelsHidden()
                     .disabled(model.isBusy)
-                    .help("Turns on Claude Code's sandbox and denies reads of /etc/localtime and the global preferences. Sandboxed commands can then only reach allowed network domains.")
+                    .help("Turns on Claude Code's sandbox and denies reads of /etc/localtime and the global preferences. If the sandbox was off with no settings of your own, it also allows writes anywhere, all network domains, Unix sockets and local ports; otherwise your sandbox settings stay as they are.")
                     .accessibilityIdentifier("ctz.shieldToggle")
                 }
 
