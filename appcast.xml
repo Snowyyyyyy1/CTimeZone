@@ -3,6 +3,27 @@
     <channel>
         <title>CTimeZone</title>
         <item>
+            <title>0.3.4</title>
+            <pubDate>Mon, 12 Oct 2026 04:31:06 +0000</pubDate>
+            <sparkle:version>304</sparkle:version>
+            <sparkle:shortVersionString>0.3.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown">### 改进
+
+- **隐藏 Mac 时区不再顺带限制别的**：如果 sandbox 原来是关的，`settings.json` 的 `sandbox` 里也没有你自己的设置，打开开关时会一并放开写入、所有网络域名、Unix socket 和本地端口，sandbox 基本只拦时区。
+- 你原来就开着 sandbox，或者已经写了自己的 sandbox 设置，开关只加时区相关的三条读取限制，其余保持原样。
+- 关掉开关只撤销 CTimeZone 加的条目，之后你自己加的设置不受影响。
+
+### 说明
+
+- 网络是通过在 `permissions.allow` 里加 `WebFetch(domain:*)` 放开的，所以 Claude 自带的 WebFetch 访问任何网站也不再询问。
+- sandbox 里的命令默认不经询问直接执行，写入放开后，它们可以在任意位置写入或删除文件。`~/.claude`、`.zshrc`、`.git/hooks` 等受保护路径仍然不可写。
+- `open`、`osascript` 这类需要 Apple Events 的命令仍会被拦下，否则命令能借别的程序查到时区。
+- 已经打开开关的用户，先关掉再打开一次，才会用上新行为。
+</description>
+            <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.3.4/CTimeZone-0.3.4.dmg" length="5593294" type="application/octet-stream" sparkle:edSignature="3TPT2jJzLWrYIQsdH/NNSsXT51+3zLycBSab22z+rzsaklnVNDWTS9R2AejZjMeeJF2F+FfPV2wJt3JXE095CA==" />
+        </item>
+        <item>
             <title>0.3.3</title>
             <pubDate>Sun, 11 Oct 2026 09:20:52 +0000</pubDate>
             <sparkle:version>303</sparkle:version>
@@ -33,19 +54,6 @@
 - 昼夜位置只取决于 UTC 时间，不受夏令时影响；两个时钟和时差会按日期自动切换夏令时。
 </description>
             <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.3.2/CTimeZone-0.3.2.dmg" length="5552189" type="application/octet-stream" sparkle:edSignature="rShYRZQmkuLN3EmHiKTXGcozkih6roFakertMw1GJuCtM+QBuRKmOSFljHMfCGE4EZGDOdXzZOr9oKyE7CBNBA==" />
-        </item>
-        <item>
-            <title>0.3.1</title>
-            <pubDate>Sun, 11 Oct 2026 04:17:51 +0000</pubDate>
-            <sparkle:version>301</sparkle:version>
-            <sparkle:shortVersionString>0.3.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown">### 新增
-
-- **应用内切换语言**：菜单 **CTimeZone → 设置…**（⌘,）里可以选「跟随系统」「English」或「简体中文」，点「立即重启」后生效。
-- Dock 启动器跟着 CTimeZone 用同一种语言。在系统设置里给 CTimeZone 单独选的语言，下次打开 CTimeZone 时也会同步给启动器。
-</description>
-            <enclosure url="https://github.com/Snowyyyyyy1/CTimeZone/releases/download/v0.3.1/CTimeZone-0.3.1.dmg" length="5532240" type="application/octet-stream" sparkle:edSignature="RnUsxFQC7Amn3NeqnEDE08qasRkVheZo02RirtpvOXi/iO91kSAaUHQmOqqt8WF+3cgfab5TFQx1He/YaAQkCQ==" />
         </item>
     </channel>
 </rss>
