@@ -3,7 +3,20 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore: &docs
+      - '**/README*.md'
+      - CHANGELOG.md
+      - LICENSE
+      - docs/**
   pull_request:
+    paths-ignore: *docs
+
+# A pull request keeps only its newest run. Every push to main gets its own
+# group: sharing one would drop queued runs even without cancel-in-progress,
+# because a group holds a single pending run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Pull requests from forks run here too, so this workflow gets no secrets
 # and only read access. Never point it at a self-hosted runner.
@@ -25,6 +38,15 @@ jobs:
         run: >
           xcodebuild test -workspace CTimezone.xcworkspace -scheme CTimezoneKit
           -destination 'platform=macOS' -derivedDataPath .build CODE_SIGNING_ALLOWED=NO
+
+  # Separate from test: Debug tests and the Release build share no build products.
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      - name: Generate project
+        run: tuist generate --no-open
       - name: Build app
         run: >
           xcodebuild build -workspace CTimezone.xcworkspace -scheme CTimezone
