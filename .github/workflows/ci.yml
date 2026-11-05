@@ -38,15 +38,6 @@ jobs:
         run: >
           xcodebuild test -workspace CTimezone.xcworkspace -scheme CTimezoneKit
           -destination 'platform=macOS' -derivedDataPath .build CODE_SIGNING_ALLOWED=NO
-
-  # Separate from test: Debug tests and the Release build share no build products.
-  build:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v5
-      - name: Generate project
-        run: tuist generate --no-open
       - name: Build app
         run: >
           xcodebuild build -workspace CTimezone.xcworkspace -scheme CTimezone
