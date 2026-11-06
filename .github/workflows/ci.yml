@@ -3,7 +3,20 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore: &docs
+      - '**/README*.md'
+      - CHANGELOG.md
+      - LICENSE
+      - docs/**
   pull_request:
+    paths-ignore: *docs
+
+# A pull request keeps only its newest run. Every push to main gets its own
+# group: sharing one would drop queued runs even without cancel-in-progress,
+# because a group holds a single pending run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Pull requests from forks run here too, so this workflow gets no secrets
 # and only read access. Never point it at a self-hosted runner.
